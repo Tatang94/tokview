@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ApiResponse } from "@/shared/schema";
+import { ApiResponse } from "../shared/schema";
 import { formatNumber, formatDate } from "@/lib/utils";
 import { Eye, CheckCircle, Clock, Calendar, RotateCcw, Plus, TrendingUp, Heart } from "lucide-react";
 import TimerDisplay from "@/components/timer-display";

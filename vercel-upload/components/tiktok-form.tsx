@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { tiktokBoostSchema, type TiktokBoostRequest, type ApiResponse } from "@/shared/schema";
+import { tiktokBoostSchema, type TiktokBoostRequest, type ApiResponse } from "../shared/schema";
 import { validateTikTokUrl } from "@/lib/utils";
 import { CheckCircle, XCircle, Eye, EyeOff, Key, Link as LinkIcon, Rocket, Loader2, Clock } from "lucide-react";
 import TimerDisplay from "@/components/timer-display";

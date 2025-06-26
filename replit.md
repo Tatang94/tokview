@@ -126,3 +126,8 @@ Changelog:
   - Changed TikTok service from auto-search to service ID 838 for faster processing
   - Updated both Express.js and Next.js versions to use the optimized service
   - Removed service discovery API call to reduce latency
+- **UI Synchronization (June 26, 2025):**
+  - Synchronized all components between Express.js and Next.js versions
+  - Fixed import paths and component structure for Next.js compatibility
+  - Added missing Toast components for consistent notifications
+  - Ensured identical user experience across both deployment environments
