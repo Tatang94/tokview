@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -81,6 +81,36 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
     },
   });
 
+  // Check cooldown status when URL changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "url" && value.url && validateTikTokUrl(value.url)) {
+        // Check current cooldown status
+        fetch('/api/tiktok/boost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: value.url })
+        })
+        .then(res => res.json())
+        .then((response: ApiResponse) => {
+          if (!response.success && response.data?.nextBoostAt) {
+            setTimerData({
+              nextBoostAt: response.data.nextBoostAt,
+              boostsToday: response.data.boostsToday,
+              boostsRemaining: response.data.boostsRemaining,
+            });
+          }
+        })
+        .catch(() => {
+          // Ignore errors for status checks
+        });
+      } else if (!value.url || !validateTikTokUrl(value.url)) {
+        setTimerData({});
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   const onSubmit = (data: TiktokBoostRequest) => {
     setProgress(0);
     
@@ -122,6 +152,15 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
             Paste link video TikTok yang ingin ditingkatkan viewnya
           </p>
         </div>
+
+        {/* Timer Display */}
+        {timerData.nextBoostAt && (
+          <TimerDisplay 
+            nextBoostAt={timerData.nextBoostAt}
+            boostsToday={timerData.boostsToday}
+            boostsRemaining={timerData.boostsRemaining}
+          />
+        )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* URL Input */}
