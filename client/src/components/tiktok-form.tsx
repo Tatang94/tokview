@@ -52,17 +52,19 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
           boostsRemaining: response.data?.boostsRemaining,
         });
       } else {
-        toast({
-          title: "Error!",
-          description: response.error || response.message,
-          variant: "destructive",
-        });
-        // Update timer data even on error (for rate limiting)
-        if (response.data) {
+        // For rate limiting (429), show timer instead of error toast
+        if (response.data?.nextBoostAt) {
           setTimerData({
             nextBoostAt: response.data.nextBoostAt,
             boostsToday: response.data.boostsToday,
             boostsRemaining: response.data.boostsRemaining,
+          });
+          // Don't show error toast for rate limiting, timer display will handle it
+        } else {
+          toast({
+            title: "Error!",
+            description: response.error || response.message,
+            variant: "destructive",
           });
         }
       }
