@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -22,7 +22,7 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showApiKeySection, setShowApiKeySection] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [timerData, setTimerData] = useState<{ nextBoostAt?: string; boostsToday?: number; boostsRemaining?: number }>({});
+  const [boostStats, setBoostStats] = useState<{ boostsToday?: number; boostsRemaining?: number }>({});
   const { toast } = useToast();
 
   const form = useForm<TiktokBoostRequest>({
@@ -46,21 +46,30 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
         });
         onSuccess(response, variables.url);
         form.reset();
-        setTimerData({
-          nextBoostAt: response.data?.nextBoostAt,
+        setBoostStats({
           boostsToday: response.data?.boostsToday,
           boostsRemaining: response.data?.boostsRemaining,
         });
       } else {
-        toast({
-          title: "Error!",
-          description: response.error || response.message,
-          variant: "destructive",
-        });
-        // Update timer data even on error (for rate limiting)
+        // Special handling for VPN blocking
+        if (response.error === "VPN_BLOCKED") {
+          toast({
+            title: "VPN/Proxy Terdeteksi!",
+            description: response.message,
+            variant: "destructive",
+            duration: 8000,
+          });
+        } else {
+          toast({
+            title: "Error!",
+            description: response.error || response.message,
+            variant: "destructive",
+          });
+        }
+        
+        // Update boost stats even on error
         if (response.data) {
-          setTimerData({
-            nextBoostAt: response.data.nextBoostAt,
+          setBoostStats({
             boostsToday: response.data.boostsToday,
             boostsRemaining: response.data.boostsRemaining,
           });
@@ -78,6 +87,8 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
       setProgress(0);
     },
   });
+
+
 
   const onSubmit = (data: TiktokBoostRequest) => {
     setProgress(0);
@@ -98,15 +109,10 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
 
   const url = form.watch("url");
   const isValidUrl = Boolean(url && validateTikTokUrl(url));
-  const isBlocked = timerData.boostsRemaining === 0 || (timerData.nextBoostAt ? new Date(timerData.nextBoostAt) > new Date() : false);
+  const isBlocked = (boostStats.boostsRemaining !== undefined && boostStats.boostsRemaining <= 0);
 
   return (
     <>
-      <TimerDisplay 
-        nextBoostAt={timerData.nextBoostAt}
-        boostsToday={timerData.boostsToday}
-        boostsRemaining={timerData.boostsRemaining}
-      />
       <Card className="bg-surface shadow-lg mb-6">
       <CardContent className="p-6 md:p-8">
         <div className="text-center mb-6">
@@ -120,6 +126,45 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
             Paste link video TikTok yang ingin ditingkatkan viewnya
           </p>
         </div>
+
+        {/* Boost Stats Display */}
+        {(boostStats.boostsToday !== undefined) && (
+          <Card className={`mb-6 ${boostStats.boostsRemaining === 0 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-3">
+                  <Eye className={`${boostStats.boostsRemaining === 0 ? 'text-red-600' : 'text-blue-600'}`} size={20} />
+                  <h3 className={`font-semibold ${boostStats.boostsRemaining === 0 ? 'text-red-800' : 'text-blue-800'}`}>
+                    {boostStats.boostsRemaining === 0 ? 'Batas Harian Tercapai' : 'Status Boost Hari Ini'}
+                  </h3>
+                </div>
+                
+                {boostStats.boostsRemaining === 0 ? (
+                  <div className="bg-red-100 rounded-lg p-4 mb-3">
+                    <p className="text-red-800 font-semibold mb-2">Batas harian Anda sudah habis!</p>
+                    <p className="text-red-600 text-sm">Kembali lagi besok untuk melakukan boost lagi.</p>
+                    <p className="text-red-500 text-xs mt-2">Reset otomatis setiap hari pada pukul 00:00 WIB</p>
+                  </div>
+                ) : (
+                  <div className="flex justify-center space-x-6 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-900">
+                        {boostStats.boostsToday}/5
+                      </div>
+                      <p className="text-blue-600">Boost Digunakan</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-900">
+                        {boostStats.boostsRemaining}
+                      </div>
+                      <p className="text-green-600">Boost Tersisa</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* URL Input */}
@@ -218,7 +263,7 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
             ) : isBlocked ? (
               <>
                 <Clock className="mr-2 h-4 w-4" />
-                Sedang Dalam Cooldown
+                Batas Harian Tercapai
               </>
             ) : (
               <>
