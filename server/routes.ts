@@ -132,14 +132,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         console.error("N1Panel API Error:", apiError);
+        console.error("Error details:", {
+          message: apiError.message,
+          stack: apiError.stack,
+          url: validatedData.url
+        });
 
         const response: ApiResponse = {
           success: false,
-          message: "Gagal menambahkan views",
-          error: apiError.message || "Terjadi kesalahan pada API N1Panel"
+          message: "Layanan boost sedang dalam perbaikan. Silakan coba lagi nanti.",
+          error: apiError.message || "Terjadi kesalahan pada layanan eksternal"
         };
 
-        res.status(400).json(response);
+        res.status(503).json(response);
       }
 
     } catch (error: any) {
