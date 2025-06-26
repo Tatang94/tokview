@@ -134,7 +134,7 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
               <Input
                 id="url"
                 type="url"
-                placeholder="https://www.tiktok.com/@username/video/..."
+                placeholder="https://vt.tiktok.com/ZSB1Qvfyr/"
                 className={`pl-10 pr-12 transition-colors duration-200 ${
                   url && isValidUrl 
                     ? "border-green-300 focus:border-green-500" 

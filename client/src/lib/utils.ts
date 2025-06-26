@@ -26,5 +26,13 @@ export function formatDate(date: Date): string {
 }
 
 export function validateTikTokUrl(url: string): boolean {
-  return url.includes('tiktok.com') && url.includes('/video/');
+  try {
+    const urlObj = new URL(url);
+    // Support various TikTok URL formats
+    return urlObj.hostname.includes('tiktok.com') || 
+           urlObj.hostname.includes('vm.tiktok.com') ||
+           urlObj.hostname.includes('vt.tiktok.com');
+  } catch {
+    return false;
+  }
 }

@@ -25,7 +25,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const tiktokBoostSchema = z.object({
   url: z.string().url().refine((url) => {
-    return url.includes('tiktok.com') && url.includes('/video/');
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.includes('tiktok.com') || 
+             urlObj.hostname.includes('vm.tiktok.com') ||
+             urlObj.hostname.includes('vt.tiktok.com');
+    } catch {
+      return false;
+    }
   }, {
     message: "URL harus berupa link video TikTok yang valid"
   }),
