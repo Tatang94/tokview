@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { tiktokBoosts } from "../../../../shared/schema";
-import { gte, sql, eq } from "drizzle-orm";
-import type { StatsResponse } from "../../../../shared/schema";
+import { gte } from "drizzle-orm";
+
+// Import from local schema file
+import { tiktokBoosts, type StatsResponse } from "@/shared/schema";
+
+
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
-const sqlClient = neon(databaseUrl);
-const db = drizzle(sqlClient);
+const sql = neon(databaseUrl);
+const db = drizzle(sql);
 
 export async function GET() {
   try {
@@ -24,16 +27,16 @@ export async function GET() {
       .where(gte(tiktokBoosts.createdAt, today));
 
     const videosToday = todayBoosts.length;
-    const totalViews = todayBoosts.reduce((sum, boost) => sum + (boost.viewsAdded || 0), 0);
-    const successfulBoosts = todayBoosts.filter(boost => boost.status === "completed").length;
+    const totalViews = todayBoosts.reduce((sum: number, boost: any) => sum + (boost.viewsAdded || 0), 0);
+    const successfulBoosts = todayBoosts.filter((boost: any) => boost.status === "completed").length;
     const successRate = videosToday > 0 ? Math.round((successfulBoosts / videosToday) * 100) : 0;
 
     // Calculate average processing time
-    const completedBoosts = todayBoosts.filter(boost => boost.processingTime);
+    const completedBoosts = todayBoosts.filter((boost: any) => boost.processingTime);
     let avgTime = "0ms";
     
     if (completedBoosts.length > 0) {
-      const totalTime = completedBoosts.reduce((sum, boost) => {
+      const totalTime = completedBoosts.reduce((sum: number, boost: any) => {
         const timeMs = parseInt(boost.processingTime?.replace('ms', '') || '0');
         return sum + timeMs;
       }, 0);

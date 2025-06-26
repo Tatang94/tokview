@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { tiktokBoosts, users } from "../../../../shared/schema";
-import { tiktokBoostSchema, type ApiResponse } from "../../../../shared/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte } from "drizzle-orm";
+
+// Import from local schema file
+import { tiktokBoosts, tiktokBoostSchema, type ApiResponse } from "@/shared/schema";
+
+
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
-const sqlClient = neon(databaseUrl);
-const db = drizzle(sqlClient);
+const sql = neon(databaseUrl);
+const db = drizzle(sql);
 
 // VPN/Proxy detection functions
 function isVPNorProxy(ip: string): boolean {

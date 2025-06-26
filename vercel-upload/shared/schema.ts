@@ -15,6 +15,8 @@ export const tiktokBoosts = pgTable("tiktok_boosts", {
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   viewsAdded: integer("views_added").default(0),
   processingTime: text("processing_time"),
+  orderId: text("order_id"),
+  errorMessage: text("error_message"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
