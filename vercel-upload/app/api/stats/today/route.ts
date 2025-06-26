@@ -1,63 +1,60 @@
-import { NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { gte } from "drizzle-orm";
+import { NextResponse } from 'next/server';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { tiktokBoosts } from '@/shared/schema';
 
-// Import from local schema file
-import { tiktokBoosts, type StatsResponse } from "../../../../shared/schema";
-
-
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is required");
-}
-
-const sql = neon(databaseUrl);
+const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql);
 
 export async function GET() {
   try {
+    // Get today's date range
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Get today's boosts
-    const todayBoosts = await db.select()
-      .from(tiktokBoosts)
-      .where(gte(tiktokBoosts.createdAt, today));
-
-    const videosToday = todayBoosts.length;
-    const totalViews = todayBoosts.reduce((sum: number, boost: any) => sum + (boost.viewsAdded || 0), 0);
-    const successfulBoosts = todayBoosts.filter((boost: any) => boost.status === "completed").length;
-    const successRate = videosToday > 0 ? Math.round((successfulBoosts / videosToday) * 100) : 0;
-
-    // Calculate average processing time
-    const completedBoosts = todayBoosts.filter((boost: any) => boost.processingTime);
-    let avgTime = "0ms";
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    if (completedBoosts.length > 0) {
-      const totalTime = completedBoosts.reduce((sum: number, boost: any) => {
-        const timeMs = parseInt(boost.processingTime?.replace('ms', '') || '0');
-        return sum + timeMs;
-      }, 0);
-      const avgTimeMs = Math.round(totalTime / completedBoosts.length);
-      avgTime = `${avgTimeMs}ms`;
-    }
-
-    const response: StatsResponse = {
+    // Get all boosts from today
+    const allBoosts = await db.select().from(tiktokBoosts);
+    
+    const todayBoosts = allBoosts.filter(boost => {
+      const boostDate = new Date(boost.createdAt!);
+      return boostDate >= todayStart;
+    });
+    
+    // Calculate stats
+    const videosToday = todayBoosts.length;
+    const totalViews = todayBoosts.reduce((sum, boost) => sum + (boost.viewsAdded || 0), 0);
+    const successfulBoosts = todayBoosts.filter(boost => boost.status === 'completed').length;
+    const successRate = videosToday > 0 ? (successfulBoosts / videosToday) * 100 : 0;
+    
+    // Calculate average processing time
+    const processingTimes = todayBoosts
+      .filter(boost => boost.processingTime && boost.processingTime !== '0s')
+      .map(boost => {
+        const timeStr = (boost.processingTime || '0s').replace('s', '');
+        return parseInt(timeStr) || 0;
+      });
+    
+    const avgTimeSeconds = processingTimes.length > 0 
+      ? Math.round(processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length)
+      : 0;
+    
+    const avgTime = `${avgTimeSeconds}s`;
+    
+    return NextResponse.json({
       videosToday,
       totalViews,
-      successRate,
+      successRate: Math.round(successRate * 10) / 10, // Round to 1 decimal
       avgTime
-    };
-
-    return NextResponse.json(response);
-
-  } catch (error: any) {
-    console.error("Stats error:", error);
-    return NextResponse.json(
-      { error: "Failed to get stats" },
-      { status: 500 }
-    );
+    });
+    
+  } catch (error) {
+    console.error('Stats error:', error);
+    
+    return NextResponse.json({
+      videosToday: 0,
+      totalViews: 0,
+      successRate: 0,
+      avgTime: '0s'
+    });
   }
 }

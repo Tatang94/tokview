@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@neondatabase/serverless'],
+  experimental: {
+    serverComponentsExternalPackages: ['@neondatabase/serverless']
+  },
   typescript: {
     ignoreBuildErrors: false,
   },
