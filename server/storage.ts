@@ -1,4 +1,4 @@
-import { users, tiktokBoosts, type User, type InsertUser, type TiktokBoost, type InsertTiktokBoost } from "@shared/schema";
+import { users, tiktokBoosts, type User, type InsertUser, type TiktokBoost, type InsertTiktokBoost } from "../shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 

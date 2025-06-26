@@ -98,3 +98,6 @@ Changelog:
 - Integrated N1Panel SMM service with provided API key for TikTok views
 - Added real-time countdown timer display with visual status indicators
 - Price: $0.001 per 1000 views with automatic rate limiting
+- Migration from Express.js to Next.js started for Vercel deployment compatibility
+- Created Next.js app structure with API routes and React components
+- Both Express.js (port 5000) and Next.js (port 3000) versions available for testing
