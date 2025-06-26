@@ -155,4 +155,6 @@ Changelog:
   - Database URL and credentials properly configured for Vercel deployment
   - API routes fully functional with PostgreSQL integration
   - Removed problematic @tailwindcss/typography dependency causing build errors
+  - Cleaned Tailwind config to use minimal plugins without animations
+  - Added Vercel configuration file with environment variables
   - Build system now clean and ready for production deployment
