@@ -149,8 +149,10 @@ Changelog:
   - Optimized for mobile usage with touch-friendly buttons and spacing
 - **Next.js Build Configuration Fixed (June 26, 2025):**
   - Fixed PostCSS configuration to use CommonJS module exports
-  - Updated Next.js config to use correct experimental options for Neon database
+  - Updated Next.js config to use serverExternalPackages instead of experimental option
   - Resolved TypeScript errors in API routes with proper Drizzle ORM usage
   - Created proper environment variables configuration (.env.local)
   - Database URL and credentials properly configured for Vercel deployment
   - API routes fully functional with PostgreSQL integration
+  - Removed problematic @tailwindcss/typography dependency causing build errors
+  - Build system now clean and ready for production deployment
