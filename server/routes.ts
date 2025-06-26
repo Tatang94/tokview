@@ -120,37 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Call N1Panel API
         const apiKey = "ed7a9a71995857a4c332d78697e9cd2b";
         
-        // First, get available TikTok services
-        const servicesResponse = await fetch("https://n1panel.com/api/v2", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            key: apiKey,
-            action: 'services'
-          }),
-        });
-
-        if (!servicesResponse.ok) {
-          throw new Error("Gagal mengambil daftar layanan");
-        }
-
-        const services = await servicesResponse.json();
-        
-        // Find cheapest TikTok Views service
-        const tiktokViewServices = services.filter((service: any) => 
-          service.name.toLowerCase().includes('tiktok') && 
-          service.name.toLowerCase().includes('view')
-        ).sort((a: any, b: any) => parseFloat(a.rate) - parseFloat(b.rate));
-
-        if (tiktokViewServices.length === 0) {
-          throw new Error("Layanan TikTok Views tidak tersedia");
-        }
-
-        const cheapestService = tiktokViewServices[0];
-        
-        // Place order for 1000 views
+        // Use service ID 838 for faster TikTok views
         const orderResponse = await fetch("https://n1panel.com/api/v2", {
           method: "POST",
           headers: {
@@ -159,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body: new URLSearchParams({
             key: apiKey,
             action: 'add',
-            service: cheapestService.service,
+            service: '838',
             link: validatedData.url,
             quantity: '1000',
           }),

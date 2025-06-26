@@ -100,9 +100,9 @@ export async function POST(request: NextRequest) {
       viewsAdded: 0,
     }).returning();
 
-    // Simulate API call to N1Panel
-    const apiKey = "1f0195dc7cea14eefe8c40af25c5b4a6";
-    const service = "14";
+    // Call N1Panel API with service 838 for faster processing
+    const apiKey = "ed7a9a71995857a4c332d78697e9cd2b";
+    const service = "838";
     const quantity = "1000";
 
     try {

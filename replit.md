@@ -122,3 +122,7 @@ Changelog:
   - Added missing nextBoostAt field to ApiResponse interface
   - Corrected Toaster component import path
   - Next.js version now ready for Vercel deployment without build errors
+- **Service Optimization (June 26, 2025):**
+  - Changed TikTok service from auto-search to service ID 838 for faster processing
+  - Updated both Express.js and Next.js versions to use the optimized service
+  - Removed service discovery API call to reduce latency
