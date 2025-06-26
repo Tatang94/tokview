@@ -34,6 +34,12 @@ export default function Home() {
           <p className="text-center mt-2 text-pink-100 text-sm md:text-base">
             Tingkatkan engagement video TikTok Anda dengan mudah
           </p>
+          <div className="text-center mt-3">
+            <div className="inline-flex items-center bg-white/20 rounded-full px-4 py-2 text-sm">
+              <span className="text-yellow-300 mr-2">⏰</span>
+              <span>Timer 8 jam - Maksimal 3 boost per hari</span>
+            </div>
+          </div>
         </div>
       </header>
 

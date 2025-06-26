@@ -1,4 +1,6 @@
 import { users, tiktokBoosts, type User, type InsertUser, type TiktokBoost, type InsertTiktokBoost } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -16,60 +18,62 @@ export interface IStorage {
   canBoost(url: string): Promise<{ canBoost: boolean; reason?: string; nextBoostAt?: Date; boostsToday: number }>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private tiktokBoosts: Map<number, TiktokBoost>;
-  private currentUserId: number;
-  private currentBoostId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.tiktokBoosts = new Map();
-    this.currentUserId = 1;
-    this.currentBoostId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createTiktokBoost(insertBoost: InsertTiktokBoost): Promise<TiktokBoost> {
-    const id = this.currentBoostId++;
-    const boost: TiktokBoost = {
-      ...insertBoost,
-      id,
-      status: 'pending',
-      viewsAdded: 0,
-      processingTime: null,
-      createdAt: new Date(),
-      nextBoostAt: null,
-    };
-    this.tiktokBoosts.set(id, boost);
+    const [boost] = await db
+      .insert(tiktokBoosts)
+      .values({
+        ...insertBoost,
+        status: 'pending',
+        viewsAdded: 0,
+        processingTime: null,
+        createdAt: new Date(),
+        nextBoostAt: null,
+      })
+      .returning();
     return boost;
+  }
+
+  async updateTiktokBoost(id: number, updates: Partial<TiktokBoost>): Promise<TiktokBoost | undefined> {
+    const [boost] = await db
+      .update(tiktokBoosts)
+      .set(updates)
+      .where(eq(tiktokBoosts.id, id))
+      .returning();
+    return boost || undefined;
   }
 
   async getTodayBoosts(url?: string): Promise<TiktokBoost[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    return Array.from(this.tiktokBoosts.values()).filter(boost => {
-      const boostDate = boost.createdAt && boost.createdAt >= today;
-      const urlMatch = url ? boost.url === url : true;
-      return boostDate && urlMatch;
-    });
+    let query = db.select().from(tiktokBoosts);
+    
+    if (url) {
+      const results = await query.where(eq(tiktokBoosts.url, url));
+      return results.filter(boost => boost.createdAt && boost.createdAt >= today);
+    } else {
+      const results = await query;
+      return results.filter(boost => boost.createdAt && boost.createdAt >= today);
+    }
   }
 
   async canBoost(url: string): Promise<{ canBoost: boolean; reason?: string; nextBoostAt?: Date; boostsToday: number }> {
@@ -110,28 +114,13 @@ export class MemStorage implements IStorage {
     };
   }
 
-  async updateTiktokBoost(id: number, updates: Partial<TiktokBoost>): Promise<TiktokBoost | undefined> {
-    const boost = this.tiktokBoosts.get(id);
-    if (!boost) return undefined;
-    
-    const updatedBoost = { ...boost, ...updates };
-    this.tiktokBoosts.set(id, updatedBoost);
-    return updatedBoost;
-  }
-
   async getTodayStats(): Promise<{
     videosToday: number;
     totalViews: number;
     successRate: number;
     avgTime: string;
   }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todayBoosts = Array.from(this.tiktokBoosts.values()).filter(
-      boost => boost.createdAt && boost.createdAt >= today
-    );
-
+    const todayBoosts = await this.getTodayBoosts();
     const completed = todayBoosts.filter(boost => boost.status === 'completed');
     const totalViews = completed.reduce((sum, boost) => sum + (boost.viewsAdded || 0), 0);
     const successRate = todayBoosts.length > 0 ? (completed.length / todayBoosts.length) * 100 : 0;
@@ -145,4 +134,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
