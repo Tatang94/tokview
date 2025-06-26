@@ -1,0 +1,6 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/stats/today/route": "app/api/stats/today/route.js",
+  "/api/tiktok/boost/route": "app/api/tiktok/boost/route.js",
+  "/page": "app/page.js"
+}

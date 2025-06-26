@@ -115,3 +115,10 @@ Changelog:
   - Express.js server running on port 5000 with full functionality
   - Vercel-upload folder synchronized with current working version
   - Both development environments (Express and Next.js) ready for deployment
+- **Next.js Build Fixes (June 26, 2025):**
+  - Fixed all import path errors (@shared to @/shared, component paths)
+  - Updated Next.js config to use serverExternalPackages instead of experimental option
+  - Fixed Tailwind config for Next.js structure (removed client/src paths)
+  - Added missing nextBoostAt field to ApiResponse interface
+  - Corrected Toaster component import path
+  - Next.js version now ready for Vercel deployment without build errors

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { StatsResponse } from "@shared/schema";
+import { StatsResponse } from "@/shared/schema";
 import { formatNumber } from "@/lib/utils";
 import { BarChart3 } from "lucide-react";
 

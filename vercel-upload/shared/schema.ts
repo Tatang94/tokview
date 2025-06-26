@@ -61,6 +61,7 @@ export interface ApiResponse {
     processingTime: string;
     videoTitle?: string;
     orderId?: string;
+    nextBoostAt?: string;
     boostsToday?: number;
     boostsRemaining?: number;
   };
