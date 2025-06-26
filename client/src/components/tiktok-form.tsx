@@ -51,11 +51,22 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
           boostsRemaining: response.data?.boostsRemaining,
         });
       } else {
-        toast({
-          title: "Error!",
-          description: response.error || response.message,
-          variant: "destructive",
-        });
+        // Special handling for VPN blocking
+        if (response.error === "VPN_BLOCKED") {
+          toast({
+            title: "VPN/Proxy Terdeteksi!",
+            description: response.message,
+            variant: "destructive",
+            duration: 8000,
+          });
+        } else {
+          toast({
+            title: "Error!",
+            description: response.error || response.message,
+            variant: "destructive",
+          });
+        }
+        
         // Update boost stats even on error
         if (response.data) {
           setBoostStats({

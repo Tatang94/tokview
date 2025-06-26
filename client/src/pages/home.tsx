@@ -34,10 +34,14 @@ export default function Home() {
           <p className="text-center mt-2 text-pink-100 text-sm md:text-base">
             Tingkatkan engagement video TikTok Anda dengan mudah
           </p>
-          <div className="text-center mt-3">
+          <div className="text-center mt-3 space-y-2">
             <div className="inline-flex items-center bg-white/20 rounded-full px-4 py-2 text-sm">
               <span className="text-yellow-300 mr-2">🚀</span>
               <span>Maksimal 5 boost per hari - Tanpa timer cooldown</span>
+            </div>
+            <div className="inline-flex items-center bg-red-500/80 rounded-full px-4 py-2 text-xs">
+              <span className="text-red-100 mr-2">🚫</span>
+              <span className="text-red-100">VPN/Proxy tidak diizinkan - Gunakan koneksi asli</span>
             </div>
           </div>
         </div>

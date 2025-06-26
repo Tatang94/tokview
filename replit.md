@@ -93,11 +93,17 @@ Preferred communication style: Simple, everyday language.
 Changelog:
 - June 26, 2025. Initial setup
 - Added PostgreSQL database integration with Drizzle ORM
-- Implemented 8-hour cooldown timer system between boosts
-- Added 3 boosts per day limit per video
+- ~~Implemented 8-hour cooldown timer system between boosts~~ (Removed)
+- ~~Added 3 boosts per day limit per video~~ (Changed to 5 per IP)
 - Integrated N1Panel SMM service with provided API key for TikTok views
-- Added real-time countdown timer display with visual status indicators
+- ~~Added real-time countdown timer display with visual status indicators~~ (Removed)
 - Price: $0.001 per 1000 views with automatic rate limiting
 - Migration from Express.js to Next.js started for Vercel deployment compatibility
 - Created Next.js app structure with API routes and React components
 - Both Express.js (port 5000) and Next.js (port 3000) versions available for testing
+- **Updated System (June 26, 2025):**
+  - Changed to 5 boosts per IP address per day (instead of 3 per video)
+  - Removed 8-hour cooldown timer completely
+  - Added VPN/Proxy detection and blocking system
+  - IP-based tracking with real-time API validation
+  - Clear daily limit notifications with "come back tomorrow" messaging
