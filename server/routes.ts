@@ -11,9 +11,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = tiktokBoostSchema.parse(req.body);
       const startTime = Date.now();
+      const clientIP = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '127.0.0.1';
+      const ipAddress = Array.isArray(clientIP) ? clientIP[0] : clientIP;
 
-      // Check if user can boost this video
-      const boostCheck = await storage.canBoost(validatedData.url);
+      // Check if IP can boost (5 boosts per day limit)
+      const boostCheck = await storage.canBoost(ipAddress);
       
       if (!boostCheck.canBoost) {
         const response: ApiResponse = {
@@ -23,9 +25,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             viewsAdded: 0,
             status: 'blocked',
             processingTime: '0s',
-            nextBoostAt: boostCheck.nextBoostAt?.toISOString(),
             boostsToday: boostCheck.boostsToday,
-            boostsRemaining: 3 - boostCheck.boostsToday,
+            boostsRemaining: 5 - boostCheck.boostsToday,
           }
         };
         return res.status(429).json(response);
@@ -34,6 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create boost record
       const boost = await storage.createTiktokBoost({
         url: validatedData.url,
+        ipAddress: ipAddress,
       });
 
       try {
@@ -93,19 +95,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orderData = await orderResponse.json();
         const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
 
-        // Calculate next boost time (8 hours from now)
-        const nextBoostTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-        
         // Update boost record with success
         const updatedBoost = await storage.updateTiktokBoost(boost.id, {
           status: 'completed',
           viewsAdded: orderData.quantity || 1000,
           processingTime,
-          nextBoostAt: nextBoostTime,
         });
 
         // Get updated boost stats
-        const updatedBoostCheck = await storage.canBoost(validatedData.url);
+        const updatedBoostCheck = await storage.canBoost(ipAddress);
 
         const response: ApiResponse = {
           success: true,
@@ -116,9 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             processingTime,
             videoTitle: orderData.title || "TikTok Video",
             orderId: orderData.order || boost.id.toString(),
-            nextBoostAt: nextBoostTime.toISOString(),
             boostsToday: updatedBoostCheck.boostsToday,
-            boostsRemaining: 3 - updatedBoostCheck.boostsToday,
+            boostsRemaining: 5 - updatedBoostCheck.boostsToday,
           }
         };
 

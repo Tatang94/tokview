@@ -36,8 +36,8 @@ export default function Home() {
           </p>
           <div className="text-center mt-3">
             <div className="inline-flex items-center bg-white/20 rounded-full px-4 py-2 text-sm">
-              <span className="text-yellow-300 mr-2">⏰</span>
-              <span>Timer 8 jam - Maksimal 3 boost per hari</span>
+              <span className="text-yellow-300 mr-2">🚀</span>
+              <span>Maksimal 5 boost per hari - Tanpa timer cooldown</span>
             </div>
           </div>
         </div>

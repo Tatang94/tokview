@@ -15,7 +15,8 @@ export interface IStorage {
     avgTime: string;
   }>;
   getTodayBoosts(url?: string): Promise<TiktokBoost[]>;
-  canBoost(url: string): Promise<{ canBoost: boolean; reason?: string; nextBoostAt?: Date; boostsToday: number }>;
+  getTodayBoostsByIP(ipAddress: string): Promise<TiktokBoost[]>;
+  canBoost(ipAddress: string): Promise<{ canBoost: boolean; reason?: string; boostsToday: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -46,7 +47,6 @@ export class DatabaseStorage implements IStorage {
         viewsAdded: 0,
         processingTime: null,
         createdAt: new Date(),
-        nextBoostAt: null,
       })
       .returning();
     return boost;
@@ -76,42 +76,32 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async canBoost(url: string): Promise<{ canBoost: boolean; reason?: string; nextBoostAt?: Date; boostsToday: number }> {
-    const todayBoosts = await this.getTodayBoosts(url);
+  async canBoost(ipAddress: string): Promise<{ canBoost: boolean; reason?: string; boostsToday: number }> {
+    const todayBoosts = await this.getTodayBoostsByIP(ipAddress);
     const boostsToday = todayBoosts.length;
     
-    // Check if user has reached daily limit (3 boosts per day)
-    if (boostsToday >= 3) {
+    // Check if IP has reached daily limit (5 boosts per day)
+    if (boostsToday >= 5) {
       return {
         canBoost: false,
-        reason: "Anda sudah mencapai batas 3 boost per hari untuk video ini",
+        reason: "Anda sudah mencapai batas 5 boost per hari",
         boostsToday
       };
-    }
-
-    // Check if user needs to wait 8 hours since last boost
-    const lastBoost = todayBoosts
-      .filter(boost => boost.status === 'completed')
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))[0];
-
-    if (lastBoost && lastBoost.createdAt) {
-      const nextBoostTime = new Date(lastBoost.createdAt.getTime() + 8 * 60 * 60 * 1000); // 8 hours
-      const now = new Date();
-      
-      if (now < nextBoostTime) {
-        return {
-          canBoost: false,
-          reason: "Anda harus menunggu 8 jam sejak boost terakhir",
-          nextBoostAt: nextBoostTime,
-          boostsToday
-        };
-      }
     }
 
     return {
       canBoost: true,
       boostsToday
     };
+  }
+
+  async getTodayBoostsByIP(ipAddress: string): Promise<TiktokBoost[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const query = db.select().from(tiktokBoosts);
+    const results = await query.where(eq(tiktokBoosts.ipAddress, ipAddress));
+    return results.filter(boost => boost.createdAt && boost.createdAt >= today);
   }
 
   async getTodayStats(): Promise<{

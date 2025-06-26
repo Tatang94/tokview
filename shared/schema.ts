@@ -11,11 +11,11 @@ export const users = pgTable("users", {
 export const tiktokBoosts = pgTable("tiktok_boosts", {
   id: serial("id").primaryKey(),
   url: text("url").notNull(),
+  ipAddress: text("ip_address").notNull(),
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   viewsAdded: integer("views_added").default(0),
   processingTime: text("processing_time"),
   createdAt: timestamp("created_at").defaultNow(),
-  nextBoostAt: timestamp("next_boost_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -41,6 +41,7 @@ export const tiktokBoostSchema = z.object({
 
 export const insertTiktokBoostSchema = createInsertSchema(tiktokBoosts).pick({
   url: true,
+  ipAddress: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -58,7 +59,6 @@ export interface ApiResponse {
     processingTime: string;
     videoTitle?: string;
     orderId?: string;
-    nextBoostAt?: string;
     boostsToday?: number;
     boostsRemaining?: number;
   };
