@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import TiktokForm from '../client/src/components/tiktok-form'
-import StatsSection from '../client/src/components/stats-section'
-import ResultsSection from '../client/src/components/results-section'
+import TiktokForm from '@/components/tiktok-form'
+import StatsSection from '@/components/stats-section'
+import ResultsSection from '@/components/results-section'
 
 interface ApiResponse {
   success: boolean;

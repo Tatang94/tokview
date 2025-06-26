@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { eq, and, gte } from "drizzle-orm";
 
 // Import from local schema file
-import { tiktokBoosts, tiktokBoostSchema, type ApiResponse } from "@/shared/schema";
+import { tiktokBoosts, tiktokBoostSchema, type ApiResponse } from "../../../../shared/schema";
 
 
 
