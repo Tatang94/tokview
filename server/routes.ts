@@ -38,33 +38,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         // Call N1Panel API
-        const apiKey = validatedData.apiKey || process.env.N1PANEL_API_KEY || "ed7a9a71995857a4c332d78697e9cd2b";
+        const apiKey = "ed7a9a71995857a4c332d78697e9cd2b";
         
-        if (!apiKey) {
-          throw new Error("API key tidak ditemukan");
-        }
-
-        // Make actual API call to SMM panel (using cheapest option)
-        const smmResponse = await fetch("https://morethanpanel.com/api/v2", {
+        // First, get available TikTok services
+        const servicesResponse = await fetch("https://n1panel.com/api/v2", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: JSON.stringify({
+          body: new URLSearchParams({
             key: apiKey,
-            action: 'add',
-            service: '1', // TikTok Views service ID (needs to be checked from panel)
-            link: validatedData.url,
-            quantity: 1000,
+            action: 'services'
           }),
         });
 
-        if (!smmResponse.ok) {
-          const errorText = await smmResponse.text();
-          throw new Error(`SMM Panel API Error: ${smmResponse.status} - ${errorText}`);
+        if (!servicesResponse.ok) {
+          throw new Error("Gagal mengambil daftar layanan");
         }
 
-        const smmData = await smmResponse.json();
+        const services = await servicesResponse.json();
+        
+        // Find cheapest TikTok Views service
+        const tiktokViewServices = services.filter((service: any) => 
+          service.name.toLowerCase().includes('tiktok') && 
+          service.name.toLowerCase().includes('view')
+        ).sort((a: any, b: any) => parseFloat(a.rate) - parseFloat(b.rate));
+
+        if (tiktokViewServices.length === 0) {
+          throw new Error("Layanan TikTok Views tidak tersedia");
+        }
+
+        const cheapestService = tiktokViewServices[0];
+        
+        // Place order for 1000 views
+        const orderResponse = await fetch("https://n1panel.com/api/v2", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            key: apiKey,
+            action: 'add',
+            service: cheapestService.service,
+            link: validatedData.url,
+            quantity: '1000',
+          }),
+        });
+
+        if (!orderResponse.ok) {
+          const errorText = await orderResponse.text();
+          throw new Error(`N1Panel API Error: ${orderResponse.status} - ${errorText}`);
+        }
+
+        const orderData = await orderResponse.json();
         const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
 
         // Calculate next boost time (8 hours from now)
@@ -73,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update boost record with success
         const updatedBoost = await storage.updateTiktokBoost(boost.id, {
           status: 'completed',
-          viewsAdded: smmData.quantity || 1000,
+          viewsAdded: orderData.quantity || 1000,
           processingTime,
           nextBoostAt: nextBoostTime,
         });
@@ -85,11 +111,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           success: true,
           message: "Views berhasil ditambahkan!",
           data: {
-            viewsAdded: smmData.quantity || 1000,
+            viewsAdded: orderData.quantity || 1000,
             status: 'completed',
             processingTime,
-            videoTitle: smmData.title || "TikTok Video",
-            orderId: smmData.order || boost.id.toString(),
+            videoTitle: orderData.title || "TikTok Video",
+            orderId: orderData.order || boost.id.toString(),
             nextBoostAt: nextBoostTime.toISOString(),
             boostsToday: updatedBoostCheck.boostsToday,
             boostsRemaining: 3 - updatedBoostCheck.boostsToday,
@@ -105,12 +131,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           processingTime: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
         });
 
-        console.error("SMM Panel API Error:", apiError);
+        console.error("N1Panel API Error:", apiError);
 
         const response: ApiResponse = {
           success: false,
           message: "Gagal menambahkan views",
-          error: apiError.message || "Terjadi kesalahan pada API SMM Panel"
+          error: apiError.message || "Terjadi kesalahan pada API N1Panel"
         };
 
         res.status(400).json(response);

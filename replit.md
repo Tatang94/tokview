@@ -95,6 +95,6 @@ Changelog:
 - Added PostgreSQL database integration with Drizzle ORM
 - Implemented 8-hour cooldown timer system between boosts
 - Added 3 boosts per day limit per video
-- Integrated cheapest SMM panel service (MoreThanPanel) for TikTok views
+- Integrated N1Panel SMM service with provided API key for TikTok views
 - Added real-time countdown timer display with visual status indicators
 - Price: $0.001 per 1000 views with automatic rate limiting
