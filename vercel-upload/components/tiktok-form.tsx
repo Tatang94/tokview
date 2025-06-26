@@ -179,7 +179,7 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
               <Input
                 id="url"
                 type="url"
-                placeholder="https://vt.tiktok.com/ZSB1Qvfyr/"
+                placeholder="https://vt.tiktok.com/ZSB1XfVrN/"
                 className={`pl-10 pr-12 transition-colors duration-200 ${
                   url && isValidUrl 
                     ? "border-green-300 focus:border-green-500" 
@@ -207,7 +207,7 @@ export default function TiktokForm({ onSuccess }: TiktokFormProps) {
             )}
             <div className="text-xs text-gray-500 flex items-center">
               <i className="fas fa-info-circle mr-1"></i>
-              Contoh: https://www.tiktok.com/@username/video/1234567890
+              Contoh: https://vt.tiktok.com/ZSB1XfVrN/
             </div>
           </div>
 
