@@ -31,7 +31,7 @@ define('APP_VERSION', '1.0.0');
 define('DEFAULT_VIEWS_RANGE', [1000, 5000]);
 
 // Error reporting (set ke false untuk production)
-define('DEBUG_MODE', false);
+define('DEBUG_MODE', true);
 
 if (DEBUG_MODE) {
     error_reporting(E_ALL);

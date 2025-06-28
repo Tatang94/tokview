@@ -147,6 +147,15 @@ Changelog:
   - Express.js server running on port 5000 with full functionality
   - Cleaned up unused Vercel deployment files (app/, vercel-upload/, next.config.js)
   - Project now runs cleanly in Replit environment with security best practices
+- **PHP Version Created (June 28, 2025):**
+  - Created complete PHP version for shared hosting deployment
+  - Single-file application (index_hosting.php) with all functionality
+  - MySQL database support with auto-table creation
+  - Real N1Panel API integration with fallback demo mode
+  - Hosting-compatible configuration (config_hosting.php)
+  - Debug utilities (debug_test.php) for troubleshooting
+  - Fixed database insert/update issues and statistics tracking
+  - Support for table prefix and shared hosting limitations
 - **Mobile Super App UI Design (June 26, 2025):**
   - Completely redesigned Next.js version with mobile-first super app interface
   - Modern gradient headers with card-based layout design

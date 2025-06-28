@@ -121,7 +121,7 @@ function getTodayStats($pdo) {
 }
 
 // Get API key from environment or config
-$apiKey = $_ENV['N1PANEL_API_KEY'] ?? N1PANEL_API_KEY;
+$apiKey = $_ENV['N1PANEL_API_KEY'] ?? (defined('N1PANEL_API_KEY') ? N1PANEL_API_KEY : null);
 
 // API endpoints
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
@@ -162,6 +162,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
         // API call to N1Panel (real implementation)
         $startTime = microtime(true);
         
+        // Determine views to add
+        $viewsToAdd = rand(DEFAULT_VIEWS_RANGE[0], DEFAULT_VIEWS_RANGE[1]);
+        
         if ($apiKey && $apiKey !== 'your_api_key_here') {
             // Real API call to N1Panel
             $apiData = [
@@ -169,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
                 'action' => 'add',
                 'service' => TIKTOK_SERVICE_ID,
                 'link' => $videoUrl,
-                'quantity' => rand(DEFAULT_VIEWS_RANGE[0], DEFAULT_VIEWS_RANGE[1])
+                'quantity' => $viewsToAdd
             ];
             
             $ch = curl_init();
@@ -182,28 +185,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+            
+            // Log the response for debugging
+            if (DEBUG_MODE) {
+                error_log("N1Panel API Response: " . $response);
+                error_log("HTTP Code: " . $httpCode);
+                error_log("CURL Error: " . $curlError);
+            }
             
             if ($response && $httpCode === 200) {
                 $apiResponse = json_decode($response, true);
                 
                 if ($apiResponse && isset($apiResponse['order'])) {
-                    $viewsAdded = $apiData['quantity'];
+                    $viewsAdded = $viewsToAdd;
                     $orderId = $apiResponse['order'];
                     $status = 'completed';
                 } else {
                     $viewsAdded = 0;
-                    $orderId = 'FAILED_' . time();
+                    $orderId = 'API_FAILED_' . time();
                     $status = 'failed';
                 }
             } else {
                 $viewsAdded = 0;
-                $orderId = 'ERROR_' . time();
+                $orderId = 'NET_ERROR_' . time();
                 $status = 'failed';
             }
         } else {
-            // Mock response for demo (when no API key)
-            $viewsAdded = rand(DEFAULT_VIEWS_RANGE[0], DEFAULT_VIEWS_RANGE[1]);
+            // Demo mode - still add to statistics for testing
+            $viewsAdded = $viewsToAdd;
             $orderId = 'DEMO_' . time() . rand(1000, 9999);
             $status = 'completed';
         }
@@ -216,9 +227,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
             views_added = ?, 
             order_id = ?,
             processing_time = ?,
-            video_title = 'TikTok Video'
+            video_title = 'TikTok Video',
+            updated_at = CURRENT_TIMESTAMP
             WHERE id = ?");
-        $stmt->execute([$status, $viewsAdded, $orderId, $processingTime, $boostId]);
+        $updateResult = $stmt->execute([$status, $viewsAdded, $orderId, $processingTime, $boostId]);
+        
+        // Debug logging
+        if (DEBUG_MODE) {
+            error_log("Database update result: " . ($updateResult ? 'success' : 'failed'));
+            error_log("Boost ID: " . $boostId);
+            error_log("Views added: " . $viewsAdded);
+            error_log("Status: " . $status);
+        }
         
         $updatedCanBoost = canBoost($pdo, $ip);
         
