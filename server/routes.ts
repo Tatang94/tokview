@@ -118,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         // Call N1Panel API
-        const apiKey = "ed7a9a71995857a4c332d78697e9cd2b";
+        const apiKey = process.env.N1PANEL_API_KEY;
         
         // Use service ID 838 for faster TikTok views
         const orderResponse = await fetch("https://n1panel.com/api/v2", {
