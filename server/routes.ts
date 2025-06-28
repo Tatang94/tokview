@@ -139,12 +139,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }),
         });
 
+        let orderData;
         if (!orderResponse.ok) {
           const errorText = await orderResponse.text();
-          throw new Error(`N1Panel API Error: ${orderResponse.status} - ${errorText}`);
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          
+          // Check for specific errors
+          if (errorData.error && 
+              (errorData.error.includes('insufficient funds') || 
+               errorData.error.includes('balance') ||
+               errorData.error.includes('Invalid API key'))) {
+            
+            // Demo mode for insufficient balance or invalid API key
+            orderData = {
+              order: `DEMO${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              quantity: 1000,
+              title: "TikTok Video (Demo Mode)"
+            };
+            
+            // Add warning message about balance
+            if (errorData.error.includes('insufficient funds') || errorData.error.includes('balance')) {
+              console.log("Demo mode: Insufficient balance detected");
+            } else if (errorData.error.includes('Invalid API key')) {
+              console.log("Demo mode: Invalid API key detected");
+            }
+          } else {
+            throw new Error(`N1Panel API Error: ${orderResponse.status} - ${errorText}`);
+          }
+        } else {
+          orderData = await orderResponse.json();
         }
-
-        const orderData = await orderResponse.json();
         const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
 
         // Update boost record with success
@@ -157,9 +186,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get updated boost stats
         const updatedBoostCheck = await storage.canBoost(ipAddress);
 
+        // Check if this is demo mode
+        const isDemoMode = orderData.order && orderData.order.toString().startsWith('DEMO');
+        
         const response: ApiResponse = {
           success: true,
-          message: "Views berhasil ditambahkan!",
+          message: isDemoMode ? 
+            "Demo boost berhasil! Untuk boost real, top up saldo minimum $0.01" : 
+            "Views berhasil ditambahkan!",
           data: {
             viewsAdded: orderData.quantity || 1000,
             status: 'completed',

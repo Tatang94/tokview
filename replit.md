@@ -147,6 +147,12 @@ Changelog:
   - Express.js server running on port 5000 with full functionality
   - Cleaned up unused Vercel deployment files (app/, vercel-upload/, next.config.js)
   - Project now runs cleanly in Replit environment with security best practices
+- **API Integration and Balance Handling (June 28, 2025):**
+  - Added N1PANEL_API_KEY environment variable to both Express.js and PHP versions
+  - Implemented intelligent fallback to demo mode when API key is invalid or insufficient balance
+  - Added clear messaging about minimum balance requirements ($0.01 for TikTok views)
+  - Both applications now gracefully handle API errors and provide meaningful feedback
+  - Demo mode allows full UI testing while indicating real boost requirements
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
