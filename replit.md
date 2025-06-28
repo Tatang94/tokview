@@ -139,15 +139,15 @@ Changelog:
   - Express.js server running on port 5000 with full functionality
   - Updated TikTok URL examples from long format to short format (vt.tiktok.com)
   - Both development environments ready for production use
-- **Vercel Version 100% Synchronized (June 28, 2025):**
-  - Updated Vercel/Next.js version to match Express.js functionality completely
-  - Integrated real N1Panel API calls (service ID 838) instead of mock data
-  - Added VPN/Proxy detection and blocking system to Next.js API routes
-  - Implemented proper IP-based rate limiting (5 boosts per day per IP)
-  - Fixed all LSP errors and TypeScript issues for clean builds
-  - Database queries optimized for better performance
-  - Environment variables and configuration files properly synchronized
-  - Both Express.js and Next.js versions now functionally identical
+- **Vercel Version Security Fixed (June 28, 2025):**
+  - **CRITICAL FIX**: Removed hardcoded API keys from vercel-upload codebase
+  - Changed Vercel version to demo mode for security (simulated view boosting)
+  - Removed exposed database credentials from configuration files
+  - Added proper environment variable templates for production deployment
+  - Created comprehensive README with security guidelines and deployment instructions
+  - VPN/Proxy detection and IP-based rate limiting remain functional
+  - Database integration and UI functionality preserved
+  - Express.js version continues with full N1Panel API integration for development
 - **Mobile Super App UI Design (June 26, 2025):**
   - Completely redesigned Next.js version with mobile-first super app interface
   - Modern gradient headers with card-based layout design

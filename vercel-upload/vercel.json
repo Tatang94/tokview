@@ -4,11 +4,11 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "DATABASE_URL": "postgresql://neondb_owner:npg_fDo5qpKNe9zU@ep-gentle-fire-a62gl0x7.us-west-2.aws.neon.tech/neondb?sslmode=require",
-    "PGHOST": "ep-gentle-fire-a62gl0x7.us-west-2.aws.neon.tech",
-    "PGDATABASE": "neondb",
-    "PGUSER": "neondb_owner",
-    "PGPASSWORD": "npg_fDo5qpKNe9zU",
-    "PGPORT": "5432"
+    "DATABASE_URL": "@database_url",
+    "PGHOST": "@pghost",
+    "PGDATABASE": "@pgdatabase",
+    "PGUSER": "@pguser",
+    "PGPASSWORD": "@pgpassword",
+    "PGPORT": "@pgport"
   }
 }
