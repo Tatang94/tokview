@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
+import { gte, sql, count, sum, avg } from 'drizzle-orm';
 import { tiktokBoosts } from '@/shared/schema';
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+const dbConnection = neon(process.env.DATABASE_URL!);
+const db = drizzle(dbConnection);
 
 export async function GET() {
   try {
@@ -12,13 +13,11 @@ export async function GET() {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    // Get all boosts from today
-    const allBoosts = await db.select().from(tiktokBoosts);
-    
-    const todayBoosts = allBoosts.filter(boost => {
-      const boostDate = new Date(boost.createdAt!);
-      return boostDate >= todayStart;
-    });
+    // Get today's boosts with efficient query
+    const todayBoosts = await db
+      .select()
+      .from(tiktokBoosts)
+      .where(gte(tiktokBoosts.createdAt, todayStart));
     
     // Calculate stats
     const videosToday = todayBoosts.length;
@@ -26,19 +25,23 @@ export async function GET() {
     const successfulBoosts = todayBoosts.filter(boost => boost.status === 'completed').length;
     const successRate = videosToday > 0 ? (successfulBoosts / videosToday) * 100 : 0;
     
-    // Calculate average processing time
-    const processingTimes = todayBoosts
-      .filter(boost => boost.processingTime && boost.processingTime !== '0s')
-      .map(boost => {
-        const timeStr = (boost.processingTime || '0s').replace('s', '');
-        return parseInt(timeStr) || 0;
-      });
+    // Calculate average processing time from completed boosts
+    const completedBoosts = todayBoosts.filter(boost => 
+      boost.status === 'completed' && 
+      boost.processingTime && 
+      boost.processingTime !== '0s'
+    );
+    
+    const processingTimes = completedBoosts.map(boost => {
+      const timeStr = (boost.processingTime || '0s').replace('s', '');
+      return parseFloat(timeStr) || 0;
+    });
     
     const avgTimeSeconds = processingTimes.length > 0 
-      ? Math.round(processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length)
+      ? processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length
       : 0;
     
-    const avgTime = `${avgTimeSeconds}s`;
+    const avgTime = avgTimeSeconds > 0 ? `${avgTimeSeconds.toFixed(1)}s` : '0s';
     
     return NextResponse.json({
       videosToday,
