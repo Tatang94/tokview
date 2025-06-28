@@ -1,141 +1,123 @@
 <?php
-session_start();
-require_once 'config_hosting.php';
+// Debug test untuk N1Panel API - Test lengkap
+header('Content-Type: text/plain; charset=utf-8');
 
-// Enable all error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+echo "=== DEBUG TEST N1PANEL API ===\n";
+echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
+echo "===============================\n\n";
 
-echo "<h2>Debug Test untuk TikTok Booster PHP</h2>";
+$apiKey = '4dab7086d758c1f5ab89cf4a34cd2201';
+$apiUrl = 'https://n1panel.com/api/v2';
 
-try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ];
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-    echo "<p style='color: green;'>✓ Database connection: SUCCESS</p>";
-} catch(PDOException $e) {
-    echo "<p style='color: red;'>✗ Database connection: FAILED - " . $e->getMessage() . "</p>";
-    exit;
+function makeApiCall($action, $params = array()) {
+    global $apiKey, $apiUrl;
+    
+    $data = array_merge(array('key' => $apiKey, 'action' => $action), $params);
+    
+    echo "Request Data: " . json_encode($data) . "\n";
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Content-Type: application/x-www-form-urlencoded',
+        'Accept: application/json'
+    ));
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    $curlInfo = curl_getinfo($ch);
+    curl_close($ch);
+    
+    echo "HTTP Code: $httpCode\n";
+    if($curlError) {
+        echo "cURL Error: $curlError\n";
+    }
+    echo "Response: $response\n";
+    echo "Response Length: " . strlen($response) . " bytes\n";
+    
+    $decoded = json_decode($response, true);
+    if($decoded) {
+        echo "Decoded JSON: " . json_encode($decoded, JSON_PRETTY_PRINT) . "\n";
+    } else {
+        echo "JSON Decode Error: " . json_last_error_msg() . "\n";
+    }
+    
+    echo "Connection Info:\n";
+    echo "- URL: " . $curlInfo['url'] . "\n";
+    echo "- Connect Time: " . $curlInfo['connect_time'] . "s\n";
+    echo "- Total Time: " . $curlInfo['total_time'] . "s\n";
+    echo "- Size Download: " . $curlInfo['size_download'] . " bytes\n\n";
+    
+    return array('response' => $response, 'httpCode' => $httpCode, 'decoded' => $decoded);
 }
 
-// Check tables
-$boostsTable = TABLE_PREFIX . 'tiktok_boosts';
-$usersTable = TABLE_PREFIX . 'users';
+// Test 1: Check Balance
+echo "1. CHECKING BALANCE\n";
+echo "-------------------\n";
+$balanceResult = makeApiCall('balance');
 
-try {
-    $stmt = $pdo->query("SHOW TABLES LIKE '{$boostsTable}'");
-    if ($stmt->rowCount() > 0) {
-        echo "<p style='color: green;'>✓ Table {$boostsTable}: EXISTS</p>";
-        
-        // Check table structure
-        $stmt = $pdo->query("DESCRIBE {$boostsTable}");
-        $columns = $stmt->fetchAll();
-        echo "<p>Table structure:</p><ul>";
-        foreach ($columns as $column) {
-            echo "<li>{$column['Field']} - {$column['Type']}</li>";
-        }
-        echo "</ul>";
-        
-        // Count records
-        $stmt = $pdo->query("SELECT COUNT(*) as total FROM {$boostsTable}");
-        $count = $stmt->fetch();
-        echo "<p>Total records: {$count['total']}</p>";
-        
-        // Test today's stats
-        $today = date('Y-m-d');
-        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM {$boostsTable} WHERE DATE(created_at) = ?");
-        $stmt->execute([$today]);
-        $todayCount = $stmt->fetch();
-        echo "<p>Today's records: {$todayCount['count']}</p>";
-        
-    } else {
-        echo "<p style='color: red;'>✗ Table {$boostsTable}: NOT EXISTS</p>";
-        
-        // Try to create table
-        echo "<p>Attempting to create table...</p>";
-        $createTable = "
-        CREATE TABLE {$boostsTable} (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            video_url VARCHAR(500) NOT NULL,
-            service_id INT NOT NULL,
-            order_id VARCHAR(255),
-            status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
-            views_added INT DEFAULT 0,
-            processing_time VARCHAR(50),
-            video_title VARCHAR(500),
-            ip_address VARCHAR(45) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ";
-        
-        try {
-            $pdo->exec($createTable);
-            echo "<p style='color: green;'>✓ Table created successfully</p>";
-        } catch(PDOException $e) {
-            echo "<p style='color: red;'>✗ Failed to create table: " . $e->getMessage() . "</p>";
+// Test 2: Check Services
+echo "2. CHECKING SERVICES\n";
+echo "--------------------\n";
+$servicesResult = makeApiCall('services');
+
+// Test 3: Check specific service 838
+echo "3. CHECKING SERVICE 838 (TikTok Views)\n";
+echo "--------------------------------------\n";
+if($servicesResult['decoded'] && isset($servicesResult['decoded']['services'])) {
+    $service838 = null;
+    foreach($servicesResult['decoded']['services'] as $service) {
+        if($service['service'] == 838) {
+            $service838 = $service;
+            break;
         }
     }
-} catch(PDOException $e) {
-    echo "<p style='color: red;'>✗ Error checking tables: " . $e->getMessage() . "</p>";
-}
-
-// Test insert
-echo "<h3>Testing Insert Operation</h3>";
-try {
-    $testUrl = 'https://vt.tiktok.com/test123';
-    $testIP = '127.0.0.1';
-    
-    $stmt = $pdo->prepare("INSERT INTO {$boostsTable} (video_url, service_id, ip_address) VALUES (?, ?, ?)");
-    $result = $stmt->execute([$testUrl, TIKTOK_SERVICE_ID, $testIP]);
-    $testId = $pdo->lastInsertId();
-    
-    if ($result && $testId) {
-        echo "<p style='color: green;'>✓ Test insert: SUCCESS (ID: {$testId})</p>";
-        
-        // Test update
-        $stmt = $pdo->prepare("UPDATE {$boostsTable} SET 
-            status = 'completed', 
-            views_added = 1500, 
-            order_id = 'TEST123',
-            processing_time = '100 ms',
-            video_title = 'Test Video'
-            WHERE id = ?");
-        $updateResult = $stmt->execute([$testId]);
-        
-        if ($updateResult) {
-            echo "<p style='color: green;'>✓ Test update: SUCCESS</p>";
-        } else {
-            echo "<p style='color: red;'>✗ Test update: FAILED</p>";
-        }
-        
-        // Clean up test record
-        $stmt = $pdo->prepare("DELETE FROM {$boostsTable} WHERE id = ?");
-        $stmt->execute([$testId]);
-        echo "<p>Test record cleaned up</p>";
-        
+    if($service838) {
+        echo "Service 838 found:\n";
+        echo json_encode($service838, JSON_PRETTY_PRINT) . "\n\n";
     } else {
-        echo "<p style='color: red;'>✗ Test insert: FAILED</p>";
+        echo "Service 838 NOT FOUND in services list!\n\n";
     }
-} catch(PDOException $e) {
-    echo "<p style='color: red;'>✗ Test operations failed: " . $e->getMessage() . "</p>";
-}
-
-// Test API configuration
-echo "<h3>API Configuration</h3>";
-$apiKey = $_ENV['N1PANEL_API_KEY'] ?? (defined('N1PANEL_API_KEY') ? N1PANEL_API_KEY : null);
-if ($apiKey && $apiKey !== 'your_api_key_here') {
-    echo "<p style='color: green;'>✓ API Key: CONFIGURED</p>";
-    echo "<p>API URL: " . N1PANEL_API_URL . "</p>";
-    echo "<p>Service ID: " . TIKTOK_SERVICE_ID . "</p>";
 } else {
-    echo "<p style='color: orange;'>⚠ API Key: NOT CONFIGURED (will use demo mode)</p>";
+    echo "Could not retrieve services list\n\n";
 }
 
-echo "<p><a href='index_hosting.php'>← Back to Main App</a></p>";
+// Test 4: Add Test Order
+echo "4. ADDING TEST ORDER\n";
+echo "--------------------\n";
+$testUrl = 'https://vt.tiktok.com/ZSFAbCdEf/';
+$orderResult = makeApiCall('add', array(
+    'service' => 838,
+    'link' => $testUrl,
+    'quantity' => 1000
+));
+
+// Test 5: Check Orders
+echo "5. CHECKING ORDERS\n";
+echo "------------------\n";
+$ordersResult = makeApiCall('orders');
+
+// Summary
+echo "=== SUMMARY ===\n";
+echo "Balance API: " . ($balanceResult['httpCode'] == 200 ? 'OK' : 'FAILED') . "\n";
+echo "Services API: " . ($servicesResult['httpCode'] == 200 ? 'OK' : 'FAILED') . "\n";
+echo "Add Order API: " . ($orderResult['httpCode'] == 200 ? 'OK' : 'FAILED') . "\n";
+echo "Orders API: " . ($ordersResult['httpCode'] == 200 ? 'OK' : 'FAILED') . "\n";
+
+if($orderResult['decoded']) {
+    if(isset($orderResult['decoded']['order'])) {
+        echo "Order Created: " . $orderResult['decoded']['order'] . "\n";
+    } elseif(isset($orderResult['decoded']['error'])) {
+        echo "Order Error: " . $orderResult['decoded']['error'] . "\n";
+    }
+}
+
+echo "\n=== END DEBUG ===\n";
 ?>

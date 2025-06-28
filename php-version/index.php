@@ -159,16 +159,38 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         
+        // Debug: Log API response untuk troubleshooting
+        error_log("N1Panel API Request: " . json_encode($apiData));
+        error_log("N1Panel API Response: " . $response);
+        error_log("HTTP Code: " . $httpCode);
+        if($curlError) {
+            error_log("cURL Error: " . $curlError);
+        }
+        
+        // Parse response
         if($response && $httpCode === 200) {
             $apiResponse = json_decode($response, true);
-            if($apiResponse && isset($apiResponse['order'])) {
-                $orderId = $apiResponse['order'];
+            if($apiResponse) {
+                if(isset($apiResponse['order'])) {
+                    $orderId = $apiResponse['order'];
+                    $status = 'completed';
+                } elseif(isset($apiResponse['error'])) {
+                    error_log("N1Panel API Error: " . $apiResponse['error']);
+                    $status = 'failed';
+                } else {
+                    error_log("Unexpected API response structure: " . json_encode($apiResponse));
+                }
             }
+        } else {
+            error_log("API call failed. HTTP Code: $httpCode, Response: $response");
+            $status = 'failed';
         }
         
         $processingTime = round((microtime(true) - $startTime) * 1000, 2) . ' ms';
