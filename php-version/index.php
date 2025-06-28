@@ -8,10 +8,10 @@ $dbname = 'ezyro_39270123_ahay';
 $username = 'ezyro_39270123';
 $password = 'bec86c42f5';
 
-// N1Panel API
-$apiKey = '4dab7086d758c1f5ab89cf4a34cd2201';
-$apiUrl = 'https://n1panel.com/api/v2';
-$serviceId = 838;
+// Lollipop SMM API
+$apiKey = '99417915b8b348b025ee348e678b7788';
+$apiUrl = 'https://lollipop-smm.com/api/v2';
+$serviceId = 746;
 
 // App settings
 $dailyLimit = 5;

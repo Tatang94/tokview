@@ -2,12 +2,12 @@
 // Debug test untuk N1Panel API - Test lengkap
 header('Content-Type: text/plain; charset=utf-8');
 
-echo "=== DEBUG TEST N1PANEL API ===\n";
+echo "=== DEBUG TEST LOLLIPOP SMM API ===\n";
 echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
 echo "===============================\n\n";
 
-$apiKey = '4dab7086d758c1f5ab89cf4a34cd2201';
-$apiUrl = 'https://n1panel.com/api/v2';
+$apiKey = '99417915b8b348b025ee348e678b7788';
+$apiUrl = 'https://lollipop-smm.com/api/v2';
 
 function makeApiCall($action, $params = array()) {
     global $apiKey, $apiUrl;
@@ -94,7 +94,7 @@ echo "4. ADDING TEST ORDER\n";
 echo "--------------------\n";
 $testUrl = 'https://vt.tiktok.com/ZSFAbCdEf/';
 $orderResult = makeApiCall('add', array(
-    'service' => 838,
+    'service' => 746,
     'link' => $testUrl,
     'quantity' => 1000
 ));

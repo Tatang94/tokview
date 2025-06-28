@@ -117,15 +117,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        // Call N1Panel API
-        const apiKey = process.env.N1PANEL_API_KEY;
+        // Call Lollipop SMM API
+        const apiKey = process.env.LOLLIPOP_SMM_API_KEY;
         
         if (!apiKey) {
-          throw new Error('N1Panel API key not configured');
+          throw new Error('Lollipop SMM API key not configured');
         }
         
-        // Use service ID 838 for faster TikTok views
-        const orderResponse = await fetch("https://n1panel.com/api/v2", {
+        // Use Lollipop SMM API for TikTok views
+        const orderResponse = await fetch("https://lollipop-smm.com/api/v2", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body: new URLSearchParams({
             key: apiKey as string,
             action: 'add',
-            service: '838',
+            service: '746',
             link: validatedData.url,
             quantity: '1000',
           }),
