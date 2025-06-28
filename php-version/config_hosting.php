@@ -2,19 +2,18 @@
 // =====================================================
 // KONFIGURASI UNTUK HOSTING SHARED
 // =====================================================
-// Edit bagian ini sesuai dengan detail hosting Anda
 
-// Database configuration - GANTI DENGAN DATA HOSTING ANDA
-define('DB_HOST', 'localhost'); // atau server database hosting Anda
-define('DB_NAME', 'if0_39341535_tiktok'); // nama database yang disediakan hosting
-define('DB_USER', 'if0_39341535'); // username database Anda
-define('DB_PASS', 'password_anda'); // password database Anda
+// Database configuration - Ezyro hosting
+define('DB_HOST', 'sql305.ezyro.com');
+define('DB_NAME', 'ezyro_39270123_ahay');
+define('DB_USER', 'ezyro_39270123');
+define('DB_PASS', 'bec86c42f5');
 
 // Table prefix (jika hosting mengharuskan prefix)
 define('TABLE_PREFIX', ''); // kosongkan jika tidak perlu prefix
 
 // N1Panel API configuration
-define('N1PANEL_API_KEY', 'your_api_key_here'); // API key akan diisi otomatis dari environment
+define('N1PANEL_API_KEY', '4dab7086d758c1f5ab89cf4a34cd2201');
 define('N1PANEL_API_URL', 'https://n1panel.com/api/v2');
 define('TIKTOK_SERVICE_ID', 838);
 

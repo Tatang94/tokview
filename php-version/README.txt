@@ -3,13 +3,13 @@ TIKTOK VIEW BOOSTER - VERSI PHP
 
 CARA SETUP:
 
-1. Upload semua file ke hosting Anda
-2. Buat database MySQL baru bernama "tiktok_booster"
-3. Import file database.sql ke database tersebut
-4. Edit file config.php:
-   - Sesuaikan DB_HOST, DB_USER, DB_PASS dengan setting hosting Anda
-   - Masukkan API key N1Panel yang asli di N1PANEL_API_KEY
-5. Akses index.php di browser
+1. Upload semua file ke hosting Ezyro Anda
+2. Import file database_ezyro.sql ke database: ezyro_39270123_ahay
+3. Akses index_hosting.php di browser
+4. File config_hosting.php sudah dikonfigurasi dengan:
+   - Database Ezyro: sql305.ezyro.com
+   - API Key N1Panel: 4dab7086d758c1f5ab89cf4a34cd2201
+5. Untuk testing, gunakan debug_test.php
 
 STRUKTUR FILE:
 - index.php = File utama aplikasi (frontend + backend)
