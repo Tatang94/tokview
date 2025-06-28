@@ -9,6 +9,7 @@
     "PGDATABASE": "@pgdatabase",
     "PGUSER": "@pguser",
     "PGPASSWORD": "@pgpassword",
-    "PGPORT": "@pgport"
+    "PGPORT": "@pgport",
+    "N1PANEL_API_KEY": "@n1panel_api_key"
   }
 }

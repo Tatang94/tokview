@@ -130,16 +130,42 @@ export async function POST(request: NextRequest) {
       .returning();
     
     try {
-      // Simulate boost processing (demo mode for vercel deployment)
+      // Call N1Panel API
+      const apiKey = process.env.N1PANEL_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('N1Panel API key not configured');
+      }
+      
+      // Use service ID 838 for faster TikTok views
+      const orderResponse = await fetch("https://n1panel.com/api/v2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          key: apiKey,
+          action: 'add',
+          service: '838',
+          link: url,
+          quantity: '1000',
+        }),
+      });
+
+      if (!orderResponse.ok) {
+        const errorText = await orderResponse.text();
+        throw new Error(`N1Panel API Error: ${orderResponse.status} - ${errorText}`);
+      }
+
+      const orderData = await orderResponse.json();
       const processingTime = `${((Date.now() - startTime) / 1000).toFixed(1)}s`;
-      const viewsAdded = Math.floor(Math.random() * 5000) + 1000; // 1000-6000 views
 
       // Update boost record with success
       await db
         .update(tiktokBoosts)
         .set({
           status: 'completed',
-          viewsAdded,
+          viewsAdded: orderData.quantity || 1000,
           processingTime,
         })
         .where(eq(tiktokBoosts.id, newBoost.id));
@@ -148,13 +174,13 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Boost berhasil! (Mode Demo)",
+        message: "Views berhasil ditambahkan!",
         data: {
-          viewsAdded,
+          viewsAdded: orderData.quantity || 1000,
           status: 'completed',
           processingTime,
-          videoTitle: "TikTok Video",
-          orderId: `TK${newBoost.id.toString().padStart(6, '0')}`,
+          videoTitle: orderData.title || "TikTok Video",
+          orderId: orderData.order || newBoost.id.toString(),
           boostsToday: boostsToday.length + 1,
           boostsRemaining,
         }
@@ -170,13 +196,13 @@ export async function POST(request: NextRequest) {
         })
         .where(eq(tiktokBoosts.id, newBoost.id));
 
-      console.error("Demo boost error:", apiError);
+      console.error("N1Panel API Error:", apiError);
 
       return NextResponse.json({
         success: false,
-        message: "Terjadi kesalahan dalam mode demo. Silakan coba lagi.",
-        error: "Demo mode error"
-      }, { status: 500 });
+        message: "Layanan boost sedang dalam perbaikan. Silakan coba lagi nanti.",
+        error: apiError.message || "Terjadi kesalahan pada layanan eksternal"
+      }, { status: 503 });
     }
     
   } catch (error) {
