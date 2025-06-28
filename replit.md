@@ -153,6 +153,13 @@ Changelog:
   - Added clear messaging about minimum balance requirements ($0.01 for TikTok views)
   - Both applications now gracefully handle API errors and provide meaningful feedback
   - Demo mode allows full UI testing while indicating real boost requirements
+- **API Migration to Lollipop SMM (June 28, 2025):**
+  - Migrated from N1Panel API to Lollipop SMM API (lollipop-smm.com/api/v2)
+  - Updated API key to Lollipop SMM: 99417915b8b348b025ee348e678b7788
+  - Changed service ID from 838 to 746 (TikTok Views | Max Unlimited)
+  - Significantly improved pricing: 22.00 per 1000 views vs previous rates
+  - Successfully tested API integration with real order creation
+  - Both Express.js and PHP versions updated with new API configuration
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
