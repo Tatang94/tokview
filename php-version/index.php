@@ -1,70 +1,78 @@
 <?php
-// Simple PHP version untuk hosting shared
-error_reporting(0);
-ini_set('display_errors', 0);
+// TikTok View Booster - PHP Version for Ezyro Hosting
+// Database: ezyro_39270123_ahay
 
 // Database configuration
-$DB_HOST = 'sql305.ezyro.com';
-$DB_NAME = 'ezyro_39270123_ahay';
-$DB_USER = 'ezyro_39270123';
-$DB_PASS = 'bec86c42f5';
+$host = 'sql305.ezyro.com';
+$dbname = 'ezyro_39270123_ahay';
+$username = 'ezyro_39270123';
+$password = 'bec86c42f5';
 
-// API configuration
-$API_KEY = '4dab7086d758c1f5ab89cf4a34cd2201';
-$API_URL = 'https://n1panel.com/api/v2';
-$SERVICE_ID = 838;
-$DAILY_LIMIT = 5;
+// N1Panel API
+$apiKey = '4dab7086d758c1f5ab89cf4a34cd2201';
+$apiUrl = 'https://n1panel.com/api/v2';
+$serviceId = 838;
+
+// App settings
+$dailyLimit = 5;
+$appName = 'TikTok View Booster';
 
 // Database connection
 try {
-    $pdo = new PDO("mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4", $DB_USER, $DB_PASS);
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e) {
     die("Database connection failed");
 }
 
-// Create table if not exists
+// Create table
+$createTable = "CREATE TABLE IF NOT EXISTS tiktok_boosts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    video_url VARCHAR(500) NOT NULL,
+    service_id INT DEFAULT 838,
+    order_id VARCHAR(255),
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    views_added INT DEFAULT 0,
+    processing_time VARCHAR(50),
+    video_title VARCHAR(500),
+    ip_address VARCHAR(45) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
 try {
-    $pdo->exec("CREATE TABLE IF NOT EXISTS tiktok_boosts (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        video_url VARCHAR(500) NOT NULL,
-        service_id INT DEFAULT 838,
-        order_id VARCHAR(255),
-        status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
-        views_added INT DEFAULT 0,
-        processing_time VARCHAR(50),
-        video_title VARCHAR(500),
-        ip_address VARCHAR(45) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $pdo->exec($createTable);
 } catch(PDOException $e) {
-    // Table might already exist
+    // Table already exists
 }
 
 // Helper functions
-function getIP() {
-    $keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
-    foreach ($keys as $key) {
-        if (!empty($_SERVER[$key])) {
-            $ips = explode(',', $_SERVER[$key]);
-            $ip = trim($ips[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                return $ip;
+function getClientIP() {
+    $keys = array('HTTP_CF_CONNECTING_IP', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR');
+    foreach($keys as $key) {
+        if(array_key_exists($key, $_SERVER) === true) {
+            foreach(explode(',', $_SERVER[$key]) as $ip) {
+                $ip = trim($ip);
+                if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                    return $ip;
+                }
             }
         }
     }
-    return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
 }
 
 function validateTikTokUrl($url) {
-    $patterns = [
+    $patterns = array(
         '/^https?:\/\/(www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/',
         '/^https?:\/\/(vm|vt)\.tiktok\.com\/[\w\d]+/',
         '/^https?:\/\/m\.tiktok\.com\/v\/\d+/'
-    ];
-    foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $url)) return true;
+    );
+    
+    foreach($patterns as $pattern) {
+        if(preg_match($pattern, $url)) {
+            return true;
+        }
     }
     return false;
 }
@@ -72,54 +80,62 @@ function validateTikTokUrl($url) {
 function canBoost($pdo, $ip, $limit) {
     $today = date('Y-m-d');
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM tiktok_boosts WHERE ip_address = ? AND DATE(created_at) = ?");
-    $stmt->execute([$ip, $today]);
+    $stmt->execute(array($ip, $today));
     $count = $stmt->fetchColumn();
-    return [
-        'can' => $count < $limit,
-        'used' => (int)$count,
-        'remaining' => max(0, $limit - $count)
-    ];
+    
+    return array(
+        'canBoost' => $count < $limit,
+        'boostsToday' => (int)$count,
+        'boostsRemaining' => max(0, $limit - $count)
+    );
 }
 
 function getTodayStats($pdo) {
     $today = date('Y-m-d');
     $stmt = $pdo->prepare("SELECT 
-        COUNT(*) as videos,
-        COALESCE(SUM(views_added), 0) as views,
-        ROUND(AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) * 100, 1) as success,
-        ROUND(AVG(CAST(SUBSTRING_INDEX(processing_time, ' ', 1) AS DECIMAL(10,2))), 1) as time
+        COUNT(*) as videos_today,
+        COALESCE(SUM(views_added), 0) as total_views,
+        ROUND(AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) * 100, 1) as success_rate,
+        ROUND(AVG(CAST(SUBSTRING_INDEX(processing_time, ' ', 1) AS DECIMAL(10,2))), 1) as avg_time
         FROM tiktok_boosts WHERE DATE(created_at) = ?");
-    $stmt->execute([$today]);
+    $stmt->execute(array($today));
+    
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result ?: ['videos' => 0, 'views' => 0, 'success' => 0, 'time' => 0];
+    if(!$result) {
+        return array('videos_today' => 0, 'total_views' => 0, 'success_rate' => 0, 'avg_time' => 0);
+    }
+    return $result;
 }
 
-// Handle POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+// Handle AJAX requests
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     
-    if ($_POST['action'] === 'boost') {
-        $videoUrl = trim($_POST['videoUrl'] ?? '');
-        $ip = getIP();
+    if($_POST['action'] === 'boost') {
+        $videoUrl = trim($_POST['videoUrl']);
+        $ip = getClientIP();
         
-        if (!validateTikTokUrl($videoUrl)) {
-            echo json_encode(['success' => false, 'message' => 'URL TikTok tidak valid']);
+        if(!validateTikTokUrl($videoUrl)) {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'URL TikTok tidak valid'
+            ));
             exit;
         }
         
-        $boost = canBoost($pdo, $ip, $DAILY_LIMIT);
-        if (!$boost['can']) {
-            echo json_encode([
-                'success' => false, 
-                'message' => "Limit $DAILY_LIMIT boost per hari tercapai. Coba lagi besok.",
-                'data' => $boost
-            ]);
+        $canBoostResult = canBoost($pdo, $ip, $dailyLimit);
+        if(!$canBoostResult['canBoost']) {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Anda sudah mencapai batas ' . $dailyLimit . ' boost per hari. Silakan coba lagi besok.',
+                'data' => $canBoostResult
+            ));
             exit;
         }
         
-        // Insert record
+        // Insert boost record
         $stmt = $pdo->prepare("INSERT INTO tiktok_boosts (video_url, service_id, ip_address) VALUES (?, ?, ?)");
-        $stmt->execute([$videoUrl, $SERVICE_ID, $ip]);
+        $stmt->execute(array($videoUrl, $serviceId, $ip));
         $boostId = $pdo->lastInsertId();
         
         $startTime = microtime(true);
@@ -127,74 +143,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $orderId = 'ORD' . time() . rand(1000, 9999);
         $status = 'completed';
         
-        // API call to N1Panel
-        if ($API_KEY) {
-            $data = [
-                'key' => $API_KEY,
-                'action' => 'add',
-                'service' => $SERVICE_ID,
-                'link' => $videoUrl,
-                'quantity' => $viewsAdded
-            ];
-            
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $API_URL);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            
-            $response = curl_exec($ch);
-            curl_close($ch);
-            
-            if ($response) {
-                $apiResult = json_decode($response, true);
-                if ($apiResult && isset($apiResult['order'])) {
-                    $orderId = $apiResult['order'];
-                }
+        // Call N1Panel API
+        $apiData = array(
+            'key' => $apiKey,
+            'action' => 'add',
+            'service' => $serviceId,
+            'link' => $videoUrl,
+            'quantity' => $viewsAdded
+        );
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($apiData));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if($response && $httpCode === 200) {
+            $apiResponse = json_decode($response, true);
+            if($apiResponse && isset($apiResponse['order'])) {
+                $orderId = $apiResponse['order'];
             }
         }
         
         $processingTime = round((microtime(true) - $startTime) * 1000, 2) . ' ms';
         
-        // Update record
-        $stmt = $pdo->prepare("UPDATE tiktok_boosts SET status = ?, views_added = ?, order_id = ?, processing_time = ? WHERE id = ?");
-        $stmt->execute([$status, $viewsAdded, $orderId, $processingTime, $boostId]);
+        // Update boost record
+        $stmt = $pdo->prepare("UPDATE tiktok_boosts SET 
+            status = ?, 
+            views_added = ?, 
+            order_id = ?,
+            processing_time = ?,
+            video_title = 'TikTok Video'
+            WHERE id = ?");
+        $stmt->execute(array($status, $viewsAdded, $orderId, $processingTime, $boostId));
         
-        $newBoost = canBoost($pdo, $ip, $DAILY_LIMIT);
+        $updatedCanBoost = canBoost($pdo, $ip, $dailyLimit);
         
-        echo json_encode([
+        echo json_encode(array(
             'success' => true,
             'message' => 'Boost berhasil! Views ditambahkan ke video Anda.',
-            'data' => [
+            'data' => array(
                 'viewsAdded' => $viewsAdded,
                 'status' => $status,
                 'processingTime' => $processingTime,
+                'videoTitle' => 'TikTok Video',
                 'orderId' => $orderId,
-                'used' => $newBoost['used'],
-                'remaining' => $newBoost['remaining']
-            ]
-        ]);
+                'boostsToday' => $updatedCanBoost['boostsToday'],
+                'boostsRemaining' => $updatedCanBoost['boostsRemaining']
+            )
+        ));
         exit;
     }
 }
 
-// Handle GET stats
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'stats') {
+if($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'stats') {
     header('Content-Type: application/json');
     $stats = getTodayStats($pdo);
-    echo json_encode([
-        'videosToday' => (int)$stats['videos'],
-        'totalViews' => (int)$stats['views'],
-        'successRate' => (float)$stats['success'],
-        'avgTime' => $stats['time'] . ' ms'
-    ]);
+    
+    echo json_encode(array(
+        'videosToday' => (int)$stats['videos_today'],
+        'totalViews' => (int)$stats['total_views'],
+        'successRate' => (float)$stats['success_rate'],
+        'avgTime' => $stats['avg_time'] . ' ms'
+    ));
     exit;
 }
 
-$ip = getIP();
-$boost = canBoost($pdo, $ip, $DAILY_LIMIT);
+$ip = getClientIP();
+$canBoostResult = canBoost($pdo, $ip, $dailyLimit);
 $stats = getTodayStats($pdo);
 ?>
 <!DOCTYPE html>
@@ -202,12 +224,16 @@ $stats = getTodayStats($pdo);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok View Booster</title>
+    <title><?php echo $appName; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -215,14 +241,14 @@ $stats = getTodayStats($pdo);
         <div class="max-w-4xl mx-auto">
             <h1 class="text-2xl font-bold flex items-center gap-3">
                 <i data-lucide="trending-up" class="w-8 h-8"></i>
-                TikTok View Booster
+                <?php echo $appName; ?>
             </h1>
             <p class="text-blue-100 mt-2">Tingkatkan views video TikTok Anda secara instant</p>
         </div>
     </header>
 
     <div class="max-w-4xl mx-auto p-6 space-y-6">
-        <!-- Stats -->
+        <!-- Stats Section -->
         <div class="bg-white rounded-xl card-shadow p-6">
             <div class="flex items-center gap-3 mb-4">
                 <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-600"></i>
@@ -230,25 +256,25 @@ $stats = getTodayStats($pdo);
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-blue-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600"><?= number_format($stats['videos']) ?></div>
+                    <div class="text-2xl font-bold text-blue-600"><?php echo number_format($stats['videos_today']); ?></div>
                     <div class="text-sm text-gray-600">Video Diboost</div>
                 </div>
                 <div class="bg-green-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-green-600"><?= number_format($stats['views']) ?></div>
+                    <div class="text-2xl font-bold text-green-600"><?php echo number_format($stats['total_views']); ?></div>
                     <div class="text-sm text-gray-600">Total Views</div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-purple-600"><?= $stats['success'] ?>%</div>
+                    <div class="text-2xl font-bold text-purple-600"><?php echo $stats['success_rate']; ?>%</div>
                     <div class="text-sm text-gray-600">Success Rate</div>
                 </div>
                 <div class="bg-orange-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-orange-600"><?= $stats['time'] ?></div>
+                    <div class="text-2xl font-bold text-orange-600"><?php echo $stats['avg_time']; ?></div>
                     <div class="text-sm text-gray-600">Avg Time</div>
                 </div>
             </div>
         </div>
 
-        <!-- Form -->
+        <!-- Boost Form -->
         <div class="bg-white rounded-xl card-shadow p-6">
             <div class="flex items-center gap-3 mb-4">
                 <i data-lucide="link" class="w-6 h-6 text-blue-600"></i>
@@ -258,8 +284,13 @@ $stats = getTodayStats($pdo);
             <form id="boostForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">URL Video TikTok</label>
-                    <input type="url" id="videoUrl" placeholder="https://vt.tiktok.com/ZSFxxx/" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    <input 
+                        type="url" 
+                        id="videoUrl" 
+                        placeholder="https://vt.tiktok.com/ZSFxxx/" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                    >
                 </div>
                 
                 <div class="bg-blue-50 p-4 rounded-lg">
@@ -268,27 +299,38 @@ $stats = getTodayStats($pdo);
                         <span class="font-medium">Limit Harian</span>
                     </div>
                     <p class="text-blue-700 mt-1">
-                        Anda telah menggunakan <?= $boost['used'] ?>/<?= $DAILY_LIMIT ?> boost hari ini.
-                        Sisa: <?= $boost['remaining'] ?> boost.
+                        Anda telah menggunakan <?php echo $canBoostResult['boostsToday']; ?>/<?php echo $dailyLimit; ?> boost hari ini.
+                        Sisa: <?php echo $canBoostResult['boostsRemaining']; ?> boost.
                     </p>
                 </div>
                 
-                <button type="submit" id="submitBtn" 
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400"
-                        <?= !$boost['can'] ? 'disabled' : '' ?>>
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    <?php echo !$canBoostResult['canBoost'] ? 'disabled' : ''; ?>
+                >
                     <i data-lucide="zap" class="w-5 h-5"></i>
-                    <span id="btnText"><?= $boost['can'] ? 'Boost Sekarang' : 'Limit Tercapai' ?></span>
+                    <span id="btnText">
+                        <?php echo $canBoostResult['canBoost'] ? 'Boost Sekarang' : 'Limit Tercapai'; ?>
+                    </span>
                 </button>
             </form>
         </div>
 
-        <!-- Results -->
-        <div id="results" class="hidden bg-white rounded-xl card-shadow p-6">
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden bg-white rounded-xl card-shadow p-6">
             <div class="flex items-center gap-3 mb-4">
                 <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
                 <h2 class="text-xl font-semibold">Hasil Boost</h2>
             </div>
             <div id="resultsContent"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm mt-8">
+            <p><?php echo $appName; ?> v1.0.0</p>
+            <p class="mt-1">Powered by N1Panel API</p>
         </div>
     </div>
 
@@ -298,11 +340,16 @@ $stats = getTodayStats($pdo);
         document.getElementById('boostForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const btn = document.getElementById('submitBtn');
+            const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
-            const videoUrl = document.getElementById('videoUrl').value;
+            const videoUrl = document.getElementById('videoUrl').value.trim();
             
-            btn.disabled = true;
+            if (!videoUrl) {
+                alert('Silakan masukkan URL video TikTok');
+                return;
+            }
+            
+            submitBtn.disabled = true;
             btnText.textContent = 'Memproses...';
             
             try {
@@ -319,23 +366,25 @@ $stats = getTodayStats($pdo);
                 
                 if (data.success) {
                     showResults(data, videoUrl);
-                    setTimeout(() => location.reload(), 2000);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
                 } else {
-                    alert(data.message);
+                    alert(data.message || 'Terjadi kesalahan');
                 }
             } catch (error) {
-                alert('Terjadi kesalahan: ' + error.message);
+                alert('Terjadi kesalahan jaringan: ' + error.message);
             } finally {
-                btn.disabled = false;
+                submitBtn.disabled = false;
                 btnText.textContent = 'Boost Sekarang';
             }
         });
         
-        function showResults(data, url) {
-            const results = document.getElementById('results');
-            const content = document.getElementById('resultsContent');
+        function showResults(data, videoUrl) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
             
-            content.innerHTML = `
+            resultsContent.innerHTML = `
                 <div class="space-y-4">
                     <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div class="flex items-center gap-2 text-green-800 mb-2">
@@ -358,33 +407,40 @@ $stats = getTodayStats($pdo);
                     
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <div class="text-sm text-gray-600 mb-1">Order ID</div>
-                        <div class="font-mono text-sm">${data.data.orderId}</div>
+                        <div class="font-mono text-sm break-all">${data.data.orderId}</div>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="text-sm text-blue-700">
+                            <strong>Status:</strong> ${data.data.boostsToday}/${<?php echo $dailyLimit; ?>} boost digunakan hari ini
+                        </div>
                     </div>
                     
                     <div class="flex gap-3">
-                        <button onclick="resetForm()" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                        <button onclick="resetForm()" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
                             Boost Video Lain
                         </button>
-                        <button onclick="boostAgain('${url}')" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700">
+                        <button onclick="boostAgain('${videoUrl}')" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
                             Boost Lagi
                         </button>
                     </div>
                 </div>
             `;
             
-            results.classList.remove('hidden');
-            results.scrollIntoView({ behavior: 'smooth' });
+            resultsSection.classList.remove('hidden');
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
             lucide.createIcons();
         }
         
         function resetForm() {
             document.getElementById('videoUrl').value = '';
-            document.getElementById('results').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
         }
         
         function boostAgain(url) {
             document.getElementById('videoUrl').value = url;
-            document.getElementById('results').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('boostForm').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
