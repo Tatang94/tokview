@@ -30,10 +30,11 @@ define('APP_VERSION', '1.0.0');
 define('DEFAULT_VIEWS_RANGE', [1000, 5000]);
 
 // Error reporting (set ke false untuk production)
-define('DEBUG_MODE', true);
+define('DEBUG_MODE', false);
 
+// Safe error handling for shared hosting
 if (DEBUG_MODE) {
-    error_reporting(E_ALL);
+    error_reporting(E_ERROR | E_WARNING | E_PARSE);
     ini_set('display_errors', 1);
 } else {
     error_reporting(0);
