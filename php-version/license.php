@@ -50,14 +50,14 @@ class SecureConfig {
     public static function getPaymentConfig() {
         return [
             'dana_ewallet' => [
-                'phone_number' => '89663596711',
+                'phone_number' => '6289663596711',
                 'account_name' => 'TikTok Booster Admin',
                 'profit_margin' => 15000 // Rp 15.000 profit dari setiap transaksi
             ],
             'license_price' => 50000, // Harga license premium
             'topup_amount' => 50000,  // Amount yang akan di-topup ke Lollipop SMM
             'payment_method' => 'dana_manual',
-            'admin_contact' => 'https://wa.me/89663596711'
+            'admin_contact' => 'https://wa.me/6289663596711'
         ];
     }
     
@@ -261,6 +261,7 @@ function generateDanaPaymentInfo($amount) {
         'amount' => $amount,
         'dana_number' => $danaConfig['phone_number'],
         'account_name' => $danaConfig['account_name'],
+        'admin_contact' => $paymentConfig['admin_contact'],
         'expired_time' => date('Y-m-d H:i:s', strtotime('+1 hour')),
         'instructions' => [
             'Buka aplikasi Dana',
@@ -755,7 +756,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                         <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e3f2fd; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                             <div style="font-size: 24px; margin-bottom: 5px;">📱</div>
                             <strong style="color: #1976d2;">Dana Transfer</strong><br>
-                            <span style="color: #333; font-size: 18px; font-weight: 600;">89663596711</span><br>
+                            <span style="color: #333; font-size: 18px; font-weight: 600;">6289663596711</span><br>
                             <small style="color: #666;">TikTok Booster Admin</small>
                         </div>
                     </div>
@@ -771,7 +772,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     </div>
                     
                     <div style="text-align: center; margin-top: 15px;">
-                        <a href="https://wa.me/89663596711?text=Halo%20admin,%20saya%20mau%20beli%20license%20premium%20TikTok%20Booster" 
+                        <a href="https://wa.me/6289663596711?text=Halo%20admin,%20saya%20mau%20beli%20license%20premium%20TikTok%20Booster" 
                            style="display: inline-block; background: linear-gradient(135deg, #25d366, #128c7e); color: white; padding: 12px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 15px rgba(37,211,102,0.3);">
                             💬 Chat Admin WhatsApp
                         </a>
@@ -933,7 +934,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 
                 function contactAdmin() {
                     const message = "Halo Admin, saya ingin mengaktifkan license premium TikTok View Booster untuk akses unlimited. Bagaimana cara top up balance melalui Lollipop SMM?";
-                    const whatsappUrl = `https://wa.me/081234567890?text=${encodeURIComponent(message)}`;
+                    const whatsappUrl = `https://wa.me/6289663596711?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                     
                     document.getElementById('licenseForm').style.display = 'block';
