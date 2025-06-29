@@ -50,14 +50,14 @@ class SecureConfig {
     public static function getPaymentConfig() {
         return [
             'dana_ewallet' => [
-                'phone_number' => '089663596711',
+                'phone_number' => '89663596711',
                 'account_name' => 'TikTok Booster Admin',
                 'profit_margin' => 15000 // Rp 15.000 profit dari setiap transaksi
             ],
             'license_price' => 50000, // Harga license premium
             'topup_amount' => 50000,  // Amount yang akan di-topup ke Lollipop SMM
             'payment_method' => 'dana_manual',
-            'admin_contact' => 'https://wa.me/089663596711'
+            'admin_contact' => 'https://wa.me/89663596711'
         ];
     }
     
@@ -604,7 +604,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
                         <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
                             <strong>📱 Dana Transfer</strong><br>
-                            <small style="color: #666;">089663596711</small>
+                            <small style="color: #666;">89663596711</small>
                         </div>
                         <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
                             <strong>💳 License Premium</strong><br>
@@ -634,7 +634,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                                         <span>Metode:</span><span>Dana E-wallet</span>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                        <span>Nomor Tujuan:</span><span id="dana-number">089663596711</span>
+                                        <span>Nomor Tujuan:</span><span id="dana-number">89663596711</span>
                                     </div>
                                 </div>
                                 
