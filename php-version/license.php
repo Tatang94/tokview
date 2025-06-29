@@ -1172,34 +1172,256 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
         }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .card { 
-            background: white; 
-            border-radius: 15px; 
-            padding: 30px; 
-            margin: 20px 0; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        
+        /* Header App */
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px 30px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
-        .header { text-align: center; color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { font-size: 1.2em; opacity: 0.9; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        input[type="url"] { 
-            width: 100%; 
-            padding: 12px; 
-            border: 2px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 16px; 
+        
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
-        input[type="url"]:focus, select:focus { outline: none; border-color: #667eea; }
-        select { 
-            cursor: pointer; 
+        
+        .app-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        /* Container */
+        .container { 
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* Service Card */
+        .service-card { 
             background: white;
+            margin: 15px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 20px;
+        }
+        /* Form Styling */
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        
+        .form-label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .form-control { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1.5px solid #dee2e6; 
+            border-radius: 12px; 
+            font-size: 16px;
+            background: #fff;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .form-control:focus { 
+            outline: none; 
+            border-color: #667eea; 
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-select {
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1.5px solid #dee2e6; 
+            border-radius: 12px; 
+            font-size: 16px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .form-select:focus {
+            outline: none; 
+            border-color: #667eea; 
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Button Styling */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Alert Messages */
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c2c7;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #664d03;
+            border: 1px solid #ffecb5;
+        }
+        
+        /* Stats Grid */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 16px 12px 24px;
+            }
+            
+            .app-title {
+                font-size: 20px;
+            }
+            
+            .service-card {
+                margin: 12px;
+                padding: 20px;
+            }
+            
+            .card-title {
+                font-size: 18px;
+            }
+            
+            .form-control, .form-select {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+            
+            .btn-primary {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-number {
+                font-size: 20px;
+            }
+        }
         }
         .url-help { 
             color: #666; 
@@ -1312,24 +1534,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     </style>
 </head>
 <body>
+    <!-- App Header -->
+    <div class="app-header">
+        <div class="app-title">🚀 Licensed</div>
+        <div class="app-subtitle">Versi Aman dengan Enkripsi AES-256 - Unlimited Access</div>
+    </div>
+
     <div class="container">
-        <div class="header">
-            <h1>🚀 <?= $appName ?> - Licensed</h1>
-            <p>Versi Aman dengan Enkripsi AES-256 - Unlimited Access</p>
-        </div>
-
-        <div class="card">
-            <h2>TikTok Boost Services</h2>
-
-            
-
-            
-
+        <!-- Service Card -->
+        <div class="service-card">
+            <h2 class="card-title">TikTok Boost Services</h2>
             
             <form id="boostForm">
                 <div class="form-group">
-                    <label for="serviceType">Pilih Layanan:</label>
-                    <select id="serviceType" required onchange="updateUrlPlaceholder()">
+                    <label for="serviceType" class="form-label">Pilih Layanan:</label>
+                    <select id="serviceType" class="form-select" required onchange="updateUrlPlaceholder()">
                         <option value="">-- Pilih Layanan --</option>
                         <option value="views">TikTok Views (+1000)</option>
                         <option value="followers">TikTok Followers (+500)</option>
@@ -1338,12 +1557,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="videoUrl" id="urlLabel">URL TikTok:</label>
-                    <input type="url" id="videoUrl" placeholder="Pilih layanan terlebih dahulu" required>
+                    <label for="videoUrl" id="urlLabel" class="form-label">URL Video TikTok:</label>
+                    <input type="url" id="videoUrl" class="form-control" placeholder="Pilih layanan terlebih dahulu" required>
                     <small id="urlHelp" class="url-help">Pilih jenis layanan untuk melihat format URL yang diperlukan</small>
                 </div>
                 
-                <button type="submit" class="btn" id="submitBtn" disabled>Pilih Layanan Terlebih Dahulu</button>
+                <button type="submit" class="btn-primary" id="submitBtn" disabled>Pilih Layanan Terlebih Dahulu</button>
             </form>
             
             <div class="loading" id="loading">
@@ -1354,8 +1573,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             <div id="result"></div>
         </div>
 
-        <div class="card">
-            <h2>Statistik Hari Ini</h2>
+        <!-- Statistics Card -->
+        <div class="service-card">
+            <h2 class="card-title">Statistik Hari Ini</h2>
             <div class="stats" id="stats">
                 <div class="stat-card">
                     <div class="stat-number" id="videosToday">0</div>
@@ -1444,6 +1664,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 .catch(error => console.log('Stats load error:', error));
         }
 
+        function showAlert(message, type = 'error') {
+            const container = document.querySelector('.container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '❌';
+            alertDiv.innerHTML = `${icon} ${message}`;
+            
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
         document.getElementById('boostForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -1454,7 +1689,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             const submitBtn = document.querySelector('#submitBtn');
             
             if (!serviceType) {
-                alert('Pilih layanan terlebih dahulu!');
+                showAlert('Pilih layanan terlebih dahulu!', 'warning');
                 return;
             }
             
@@ -1484,34 +1719,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     
                     const serviceLabel = serviceDisplay[data.data.serviceType] || 'Views';
                     
-                    result.innerHTML = `
-                        <div class="result success">
-                            <strong>✅ ${data.message}</strong><br>
-                            ${serviceLabel} ditambahkan: ${data.data.viewsAdded.toLocaleString()}<br>
-                            Waktu proses: ${data.data.processingTime}<br>
-                            Status: ${data.data.status}<br>
-                            Boost hari ini: ${data.data.boostsToday}/${data.data.dailyLimit}<br>
-                            Sisa boost: ${data.data.boostsRemaining}
-                        </div>
-                    `;
+                    showAlert(`${data.message} - ${serviceLabel} ditambahkan: ${data.data.viewsAdded.toLocaleString()}`, 'success');
+                    
                     document.getElementById('videoUrl').value = '';
                     loadStats();
                 } else {
-                    result.innerHTML = `
-                        <div class="result error">
-                            <strong>❌ ${data.message}</strong>
-                        </div>
-                    `;
+                    showAlert(data.message, 'error');
                 }
             })
             .catch(error => {
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
-                result.innerHTML = `
-                    <div class="result error">
-                        <strong>❌ Terjadi kesalahan sistem</strong>
-                    </div>
-                `;
+                console.error('Network error:', error);
+                showAlert('Terjadi kesalahan jaringan. Periksa koneksi internet Anda.', 'error');
             });
         });
 
