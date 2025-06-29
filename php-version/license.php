@@ -49,16 +49,15 @@ class SecureConfig {
     
     public static function getPaymentConfig() {
         return [
-            'paydisini' => [
-                'api_id' => '3246',
-                'api_key' => 'ff79be802563e5dc1311c227a72d17c1',
-                'api_url' => 'https://api.paydisini.co.id/v1/',
+            'dana_ewallet' => [
+                'phone_number' => '089663596711',
+                'account_name' => 'TikTok Booster Admin',
                 'profit_margin' => 15000 // Rp 15.000 profit dari setiap transaksi
             ],
-            'license_price' => 65000, // Rp 50K (topup) + Rp 15K (profit)
+            'license_price' => 50000, // Harga license premium
             'topup_amount' => 50000,  // Amount yang akan di-topup ke Lollipop SMM
-            'lollipop_balance_check' => true,
-            'admin_contact' => 'https://wa.me/081234567890'
+            'payment_method' => 'dana_manual',
+            'admin_contact' => 'https://wa.me/089663596711'
         ];
     }
     
@@ -251,82 +250,53 @@ function validateLicense($code) {
     return false;
 }
 
-function createPayDisiniPayment($amount, $description) {
+function generateDanaPaymentInfo($amount) {
     $paymentConfig = SecureConfig::getPaymentConfig();
-    $paydisiniConfig = $paymentConfig['paydisini'];
-    
+    $danaConfig = $paymentConfig['dana_ewallet'];
     $uniqueCode = 'TKB' . time() . rand(100, 999);
-    
-    $postData = [
-        'key' => $paydisiniConfig['api_key'],
-        'request' => 'new',
-        'unique_code' => $uniqueCode,
-        'service' => '11', // QRIS
-        'amount' => $amount,
-        'note' => $description,
-        'valid_time' => '3600', // 1 hour
-        'type_fee' => '1'
-    ];
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $paydisiniConfig['api_url'],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query($postData),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 30
-    ]);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    $data = json_decode($response, true);
-    
-    return [
-        'httpCode' => $httpCode,
-        'response' => $response,
-        'data' => $data
-    ];
-}
-
-function checkPayDisiniStatus($uniqueCode) {
-    $paymentConfig = SecureConfig::getPaymentConfig();
-    $paydisiniConfig = $paymentConfig['paydisini'];
-    
-    $postData = [
-        'key' => $paydisiniConfig['api_key'],
-        'request' => 'status',
-        'unique_code' => $uniqueCode
-    ];
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $paydisiniConfig['api_url'],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query($postData),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 30
-    ]);
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    return json_decode($response, true);
-}
-
-function autoTopupLollipop($amount) {
-    // Fungsi untuk auto-topup ke Lollipop SMM
-    // Karena Lollipop tidak memiliki API topup, ini adalah simulasi
-    // yang akan dihandle manual oleh admin
     
     return [
         'success' => true,
-        'message' => 'Topup request sent to admin for manual processing',
+        'unique_code' => $uniqueCode,
         'amount' => $amount,
-        'timestamp' => date('Y-m-d H:i:s')
+        'dana_number' => $danaConfig['phone_number'],
+        'account_name' => $danaConfig['account_name'],
+        'expired_time' => date('Y-m-d H:i:s', strtotime('+1 hour')),
+        'instructions' => [
+            'Buka aplikasi Dana',
+            'Pilih menu Transfer > Ke Nomor HP',
+            'Masukkan nomor: ' . $danaConfig['phone_number'],
+            'Masukkan jumlah: Rp ' . number_format($amount),
+            'Tambahkan keterangan: ' . $uniqueCode,
+            'Kirim screenshot bukti transfer ke admin'
+        ]
+    ];
+}
+
+function createManualPaymentRecord($uniqueCode, $amount) {
+    // Simpan record pembayaran manual untuk tracking
+    $paymentData = [
+        'unique_code' => $uniqueCode,
+        'amount' => $amount,
+        'status' => 'pending',
+        'created_at' => date('Y-m-d H:i:s'),
+        'payment_method' => 'dana_manual'
+    ];
+    
+    // Dalam implementasi nyata, simpan ke database
+    $_SESSION['pending_payment'] = $paymentData;
+    
+    return $paymentData;
+}
+
+function processManualTopup($amount) {
+    // Fungsi untuk proses manual topup ke Lollipop SMM
+    return [
+        'success' => true,
+        'message' => 'Manual topup request created for admin processing',
+        'amount' => $amount,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'note' => 'Admin akan memproses topup ke Lollipop SMM setelah verifikasi pembayaran'
     ];
 }
 
@@ -334,79 +304,71 @@ function autoTopupLollipop($amount) {
 
 session_start();
 
-// Handle PayDisini payment creation
+// Handle Dana manual payment creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_payment') {
     $paymentConfig = SecureConfig::getPaymentConfig();
-    $amount = $paymentConfig['license_price']; // Rp 65.000 (50K topup + 15K profit)
+    $amount = $paymentConfig['license_price']; // Rp 50.000 untuk license premium
     
-    $payment = createPayDisiniPayment($amount, 'TikTok View Booster - Premium License + Auto Topup');
+    $payment = generateDanaPaymentInfo($amount);
     
-    if ($payment['httpCode'] === 200 && isset($payment['data']['success']) && $payment['data']['success']) {
-        $_SESSION['payment_data'] = $payment['data']['data'];
-        $_SESSION['payment_unique_code'] = $payment['data']['data']['unique_code'];
+    if ($payment['success']) {
+        // Create payment record for tracking
+        createManualPaymentRecord($payment['unique_code'], $amount);
+        
+        $_SESSION['payment_data'] = $payment;
+        $_SESSION['payment_unique_code'] = $payment['unique_code'];
         $_SESSION['payment_start_time'] = time();
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'qr_code' => $payment['data']['data']['qrcode_url'] ?? '',
-            'amount' => $payment['data']['data']['amount'],
-            'unique_code' => $payment['data']['data']['unique_code'],
-            'expired_time' => $payment['data']['data']['expired_time'],
-            'checkout_url' => $payment['data']['data']['checkout_url'] ?? '',
-            'topup_info' => [
-                'topup_amount' => $paymentConfig['topup_amount'],
-                'profit_margin' => $paymentConfig['paydisini']['profit_margin']
-            ]
+            'payment_method' => 'dana_manual',
+            'dana_number' => $payment['dana_number'],
+            'account_name' => $payment['account_name'],
+            'amount' => $payment['amount'],
+            'unique_code' => $payment['unique_code'],
+            'expired_time' => $payment['expired_time'],
+            'instructions' => $payment['instructions'],
+            'admin_contact' => $paymentConfig['admin_contact']
         ]);
         exit;
     } else {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false, 
-            'message' => 'Gagal membuat pembayaran PayDisini',
-            'error_details' => $payment['data']['msg'] ?? 'Silakan coba lagi atau hubungi admin'
+            'message' => 'Gagal membuat informasi pembayaran Dana',
+            'error_details' => 'Silakan coba lagi atau hubungi admin'
         ]);
         exit;
     }
 }
 
-// Handle payment status check
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_payment') {
-    $uniqueCode = $_POST['unique_code'];
-    $paymentConfig = SecureConfig::getPaymentConfig();
+// Handle manual payment verification (admin only)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'verify_payment') {
+    $uniqueCode = $_POST['unique_code'] ?? '';
+    $adminKey = $_POST['admin_key'] ?? '';
     
-    $status = checkPayDisiniStatus($uniqueCode);
-    
-    if (isset($status['success']) && $status['success'] && $status['data']['status'] === 'Success') {
-        // Payment successful - activate license and trigger auto-topup
+    // Simple admin verification (dalam implementasi nyata gunakan autentikasi yang lebih aman)
+    if ($adminKey === 'TKB2025-ADMIN-VERIFY') {
         $_SESSION['license_valid'] = true;
         $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
         
-        // Auto-topup logic for Lollipop SMM
-        $topupResult = autoTopupLollipop($paymentConfig['topup_amount']);
+        // Process manual topup for Lollipop SMM
+        $paymentConfig = SecureConfig::getPaymentConfig();
+        $topupResult = processManualTopup($paymentConfig['topup_amount']);
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'message' => 'Pembayaran berhasil! License unlimited diaktifkan + Auto topup Rp ' . number_format($paymentConfig['topup_amount']),
+            'message' => 'Pembayaran Dana berhasil diverifikasi! License unlimited diaktifkan.',
             'topup_status' => $topupResult
         ]);
         exit;
     } else {
-        $statusMap = [
-            'Pending' => 'Menunggu pembayaran...',
-            'Expired' => 'Pembayaran expired',
-            'Canceled' => 'Pembayaran dibatalkan'
-        ];
-        
-        $currentStatus = $status['data']['status'] ?? 'Pending';
-        
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false, 
-            'status' => $currentStatus,
-            'message' => $statusMap[$currentStatus] ?? 'Menunggu pembayaran...'
+            'message' => 'Verifikasi pembayaran belum selesai. Silakan hubungi admin dengan bukti transfer.'
         ]);
         exit;
     }
@@ -611,23 +573,23 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 </div>
                 
                 <button type="button" class="btn-buy" onclick="buyLicense()">
-                    🔥 Beli Premium - Rp 65.000 (Auto Topup)
+                    🔥 Beli Premium - Rp 50.000 (Dana E-wallet)
                 </button>
                 
                 <div class="license-info" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
-                    <h4 style="margin: 0 0 10px 0; color: #0056b3;">💰 Sistem Payment Hybrid</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #0056b3;">💰 Pembayaran Dana E-wallet</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
                         <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                            <strong>💳 PayDisini QRIS</strong><br>
-                            <small style="color: #666;">Rp 65.000 total</small>
+                            <strong>📱 Dana Transfer</strong><br>
+                            <small style="color: #666;">089663596711</small>
                         </div>
                         <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                            <strong>🎯 Auto Topup</strong><br>
-                            <small style="color: #666;">Rp 50.000 ke Lollipop</small>
+                            <strong>💳 License Premium</strong><br>
+                            <small style="color: #666;">Rp 50.000</small>
                         </div>
                     </div>
                     <p style="margin: 10px 0 0 0; color: #333; font-size: 13px; line-height: 1.4;">
-                        ✨ Sistem otomatis: Bayar via QRIS → License aktif → Balance Lollipop ter-topup
+                        ✨ Transfer Dana → Kirim bukti ke admin → License unlimited aktif
                     </p>
                 </div>
                 
@@ -635,41 +597,44 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 <div id="payment-modal" class="payment-modal" style="display: none;">
                     <div class="payment-content">
                         <div class="payment-header">
-                            <h3>Premium License + Auto Topup</h3>
+                            <h3>Premium License - Dana E-wallet</h3>
                             <span class="close" onclick="closePayment()">&times;</span>
                         </div>
                         <div class="payment-body">
-                            <div id="qr-section" style="display: none;">
+                            <div id="dana-section" style="display: none;">
                                 <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                                    <h4 style="margin: 0 0 10px 0; color: #2d5a2d;">💰 Breakdown Pembayaran</h4>
+                                    <h4 style="margin: 0 0 10px 0; color: #2d5a2d;">💰 Detail Pembayaran</h4>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                        <span>License Premium:</span><span>Rp 15.000</span>
+                                        <span>License Premium:</span><span id="payment-amount">Rp 50.000</span>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                        <span>Auto Topup Lollipop:</span><span>Rp 50.000</span>
+                                        <span>Metode:</span><span>Dana E-wallet</span>
                                     </div>
-                                    <hr style="margin: 10px 0; border: 1px solid #ccc;">
-                                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                                        <span>Total:</span><span id="payment-amount">Rp 65.000</span>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Nomor Tujuan:</span><span id="dana-number">089663596711</span>
                                     </div>
                                 </div>
                                 
-                                <p><strong>Scan QR Code QRIS untuk membayar:</strong></p>
-                                <div class="qr-container">
-                                    <img id="qr-image" src="" alt="QR Code QRIS" style="max-width: 250px;">
+                                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                                    <h4 style="margin: 0 0 10px 0; color: #856404;">📋 Langkah Pembayaran:</h4>
+                                    <ol id="payment-instructions" style="margin: 0; padding-left: 20px; color: #856404;">
+                                        <!-- Instructions will be populated by JavaScript -->
+                                    </ol>
                                 </div>
-                                <div class="payment-info">
-                                    <p>Kode: <strong id="payment-code"></strong></p>
-                                    <p>Berlaku sampai: <strong id="payment-expired"></strong></p>
-                                </div>
-                                <div class="payment-status">
-                                    <p id="status-text">Menunggu pembayaran...</p>
-                                    <div class="loading-payment">⏳ Mengecek status pembayaran...</div>
+                                
+                                <div class="payment-info" style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                    <p><strong>Kode Transaksi:</strong> <span id="payment-code" style="color: #007bff; font-family: monospace;"></span></p>
+                                    <p><strong>Berlaku sampai:</strong> <span id="payment-expired"></span></p>
+                                    <div style="margin-top: 15px;">
+                                        <a href="" id="whatsapp-contact" target="_blank" style="display: inline-block; padding: 10px 20px; background: #25d366; color: white; text-decoration: none; border-radius: 5px;">
+                                            📱 Kirim Bukti Transfer
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             <div id="loading-payment" style="display: block;">
                                 <div class="spinner"></div>
-                                <p>Membuat pembayaran...</p>
+                                <p>Membuat informasi pembayaran...</p>
                             </div>
                         </div>
                     </div>
@@ -688,13 +653,12 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
             </div>
             
             <script>
-                let paymentCheckInterval;
                 let currentUniqueCode = '';
                 
                 function buyLicense() {
                     document.getElementById('payment-modal').style.display = 'block';
                     document.getElementById('loading-payment').style.display = 'block';
-                    document.getElementById('qr-section').style.display = 'none';
+                    document.getElementById('dana-section').style.display = 'none';
                     
                     fetch('', {
                         method: 'POST',
@@ -708,19 +672,34 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                         if (data.success) {
                             currentUniqueCode = data.unique_code;
                             document.getElementById('loading-payment').style.display = 'none';
-                            document.getElementById('qr-section').style.display = 'block';
+                            document.getElementById('dana-section').style.display = 'block';
                             
-                            document.getElementById('qr-image').src = data.qr_code;
+                            // Populate payment info
+                            document.getElementById('payment-amount').textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(data.amount);
+                            document.getElementById('dana-number').textContent = data.dana_number;
                             document.getElementById('payment-code').textContent = data.unique_code;
                             document.getElementById('payment-expired').textContent = data.expired_time;
                             
-                            // Start payment status checking
-                            startPaymentCheck();
+                            // Populate instructions
+                            const instructionsList = document.getElementById('payment-instructions');
+                            instructionsList.innerHTML = '';
+                            data.instructions.forEach(instruction => {
+                                const li = document.createElement('li');
+                                li.textContent = instruction;
+                                li.style.marginBottom = '5px';
+                                instructionsList.appendChild(li);
+                            });
+                            
+                            // Set WhatsApp contact link
+                            const whatsappMessage = `Halo Admin, saya sudah transfer Dana Rp 50.000 untuk license premium TikTok View Booster. Kode transaksi: ${data.unique_code}. Berikut bukti transfernya:`;
+                            const whatsappUrl = `${data.admin_contact}?text=${encodeURIComponent(whatsappMessage)}`;
+                            document.getElementById('whatsapp-contact').href = whatsappUrl;
+                            
                         } else {
                             document.getElementById('loading-payment').style.display = 'none';
                             document.querySelector('.payment-body').innerHTML = `
                                 <div style="text-align: center; padding: 20px;">
-                                    <h4 style="color: red;">❌ Gagal Membuat Pembayaran</h4>
+                                    <h4 style="color: red;">❌ Gagal Membuat Info Pembayaran</h4>
                                     <p>${data.message}</p>
                                     <p style="font-size: 14px; color: #666;">${data.error_details}</p>
                                     <button onclick="closePayment()" style="margin-top: 15px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Tutup</button>
@@ -734,58 +713,15 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                         document.querySelector('.payment-body').innerHTML = `
                             <div style="text-align: center; padding: 20px;">
                                 <h4 style="color: red;">❌ Kesalahan Jaringan</h4>
-                                <p>Terjadi kesalahan saat membuat pembayaran. Silakan coba lagi.</p>
+                                <p>Terjadi kesalahan saat membuat info pembayaran. Silakan coba lagi.</p>
                                 <button onclick="closePayment()" style="margin-top: 15px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Tutup</button>
                             </div>
                         `;
                     });
                 }
                 
-                function startPaymentCheck() {
-                    paymentCheckInterval = setInterval(checkPaymentStatus, 3000);
-                }
-                
-                function checkPaymentStatus() {
-                    if (!currentUniqueCode) return;
-                    
-                    fetch('', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `action=check_payment&unique_code=${currentUniqueCode}`
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            clearInterval(paymentCheckInterval);
-                            document.getElementById('status-text').innerHTML = '<span style="color: #28a745;">✅ Pembayaran berhasil!</span>';
-                            document.querySelector('.loading-payment').style.display = 'none';
-                            
-                            // Show success message with auto-topup info
-                            setTimeout(() => {
-                                alert(`🎉 ${data.message}\\n\\nSistem telah mengaktifkan license unlimited dan melakukan auto-topup ke Lollipop SMM!`);
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            document.getElementById('status-text').textContent = data.message;
-                            
-                            if (data.status === 'Expired' || data.status === 'Canceled') {
-                                clearInterval(paymentCheckInterval);
-                                document.querySelector('.loading-payment').style.display = 'none';
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking payment:', error);
-                    });
-                }
-                
                 function closePayment() {
                     document.getElementById('payment-modal').style.display = 'none';
-                    if (paymentCheckInterval) {
-                        clearInterval(paymentCheckInterval);
-                    }
                     currentUniqueCode = '';
                 }
                 
