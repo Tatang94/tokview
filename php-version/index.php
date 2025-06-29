@@ -1,23 +1,15 @@
 <?php
-// TikTok View Booster - Versi Lengkap dengan Enkripsi
-// Semua fitur keamanan dalam satu file
-
-// ========================================
-// KONFIGURASI KEAMANAN
-// ========================================
 
 class SecureConfig {
     private static $encryptionKey = 'TikTokBooster2025!SecureKey#Indonesian';
     private static $cipher = 'AES-256-CBC';
     
-    // Enkripsi data sensitif
     public static function encrypt($data) {
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(self::$cipher));
         $encrypted = openssl_encrypt($data, self::$cipher, self::$encryptionKey, 0, $iv);
         return base64_encode($encrypted . '::' . $iv);
     }
     
-    // Dekripsi data
     public static function decrypt($data) {
         $parts = explode('::', base64_decode($data), 2);
         if (count($parts) !== 2) return false;
@@ -26,7 +18,6 @@ class SecureConfig {
         return openssl_decrypt($encrypted_data, self::$cipher, self::$encryptionKey, 0, $iv);
     }
     
-    // Konfigurasi database terenkripsi
     public static function getDatabaseConfig() {
         return [
             'host' => 'sql305.ezyro.com',
@@ -36,9 +27,7 @@ class SecureConfig {
         ];
     }
     
-    // API Key dan URL terenkripsi
     public static function getApiConfig() {
-        // Data terenkripsi untuk keamanan maksimal
         $encryptedApiKey = 'OTk0MTc5MTViOGIzNDhiMDI1ZWUzNDhlNjc4Yjc3ODg=';
         $encryptedApiUrl = 'aHR0cHM6Ly9sb2xsaXBvcC1zbW0uY29tL2FwaS92Mg==';
         
@@ -49,13 +38,11 @@ class SecureConfig {
         ];
     }
     
-    // Enkripsi URL TikTok untuk keamanan
     public static function encryptUrl($url) {
         $urlSalt = 'TikTokURL_' . date('Y-m-d');
         return self::encrypt($url . '|' . $urlSalt);
     }
     
-    // Dekripsi URL TikTok
     public static function decryptUrl($encryptedUrl) {
         $decrypted = self::decrypt($encryptedUrl);
         if (!$decrypted) return false;
@@ -64,13 +51,11 @@ class SecureConfig {
         return $parts[0] ?? false;
     }
     
-    // Validasi IP dan cegah bot
     public static function validateRequest($ip) {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
             return false;
         }
         
-        // Cek apakah dari datacenter/VPN (basic check)
         $suspiciousRanges = [
             '10.0.0.0/8',
             '172.16.0.0/12', 
@@ -97,19 +82,12 @@ class SecureConfig {
     }
 }
 
-// ========================================
-// INISIALISASI APLIKASI
-// ========================================
-
-// Inisialisasi konfigurasi aman
 $dbConfig = SecureConfig::getDatabaseConfig();
 $apiConfig = SecureConfig::getApiConfig();
 
-// Pengaturan aplikasi
 $dailyLimit = 5;
 $appName = 'TikTok View Booster';
 
-// Koneksi database dengan konfigurasi terenkripsi
 try {
     $pdo = new PDO(
         "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset=utf8mb4", 
@@ -121,7 +99,6 @@ try {
     die("Koneksi database gagal");
 }
 
-// Buat tabel jika belum ada
 $createTable = "CREATE TABLE IF NOT EXISTS tiktok_boosts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     video_url_encrypted TEXT NOT NULL,
@@ -139,14 +116,8 @@ $createTable = "CREATE TABLE IF NOT EXISTS tiktok_boosts (
 try {
     $pdo->exec($createTable);
 } catch(PDOException $e) {
-    // Tabel sudah ada
 }
 
-// ========================================
-// FUNGSI UTAMA
-// ========================================
-
-// Fungsi untuk panggilan API yang aman
 function callSecureAPI($endpoint, $data = null) {
     global $apiConfig;
     
@@ -171,7 +142,6 @@ function callSecureAPI($endpoint, $data = null) {
     return ['response' => $response, 'httpCode' => $httpCode, 'data' => json_decode($response, true)];
 }
 
-// Validasi URL TikTok
 function validateTikTokUrl($url) {
     $patterns = [
         '/^https?:\/\/(www\.)?tiktok\.com\/@[\w\.-]+\/video\/\d+/',
@@ -188,7 +158,6 @@ function validateTikTokUrl($url) {
     return false;
 }
 
-// Cek limit harian berdasarkan IP
 function checkDailyLimit($ip) {
     global $pdo, $dailyLimit;
     
@@ -203,7 +172,6 @@ function checkDailyLimit($ip) {
     ];
 }
 
-// Statistik hari ini
 function getTodayStats() {
     global $pdo;
     
@@ -230,15 +198,9 @@ function getTodayStats() {
     ];
 }
 
-// ========================================
-// PROSES REQUEST
-// ========================================
-
-// Proses permintaan
 $userIP = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-$userIP = explode(',', $userIP)[0]; // Ambil IP pertama jika ada proxy
+$userIP = explode(',', $userIP)[0];
 
-// Validasi request
 if (!SecureConfig::validateRequest($userIP)) {
     $response = [
         'success' => false,
@@ -250,7 +212,6 @@ if (!SecureConfig::validateRequest($userIP)) {
     exit;
 }
 
-// Handle POST request untuk boost
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $videoUrl = $input['url'] ?? '';
@@ -266,7 +227,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Cek limit harian
     $limitCheck = checkDailyLimit($userIP);
     if (!$limitCheck['canBoost']) {
         $response = [
@@ -283,15 +243,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Enkripsi URL sebelum disimpan
     $encryptedUrl = SecureConfig::encryptUrl($videoUrl);
     
-    // Simpan ke database
     $stmt = $pdo->prepare("INSERT INTO tiktok_boosts (video_url_encrypted, service_id, ip_address, status) VALUES (?, ?, ?, 'pending')");
     $stmt->execute([$encryptedUrl, $apiConfig['service_id'], $userIP]);
     $boostId = $pdo->lastInsertId();
     
-    // Panggil API untuk boost
     $startTime = microtime(true);
     $apiResult = callSecureAPI('', [
         'service' => $apiConfig['service_id'],
@@ -301,7 +258,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $processingTime = round((microtime(true) - $startTime), 2) . 's';
     
     if ($apiResult['httpCode'] === 200 && isset($apiResult['data']['order'])) {
-        // Berhasil
         $orderId = $apiResult['data']['order'];
         $stmt = $pdo->prepare("UPDATE tiktok_boosts SET order_id = ?, status = 'completed', views_added = 1000, processing_time = ? WHERE id = ?");
         $stmt->execute([$orderId, $processingTime, $boostId]);
@@ -319,7 +275,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]
         ];
     } else {
-        // Gagal - masuk mode demo
         $stmt = $pdo->prepare("UPDATE tiktok_boosts SET status = 'failed', processing_time = ? WHERE id = ?");
         $stmt->execute([$processingTime, $boostId]);
         
@@ -341,7 +296,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Handle GET request untuk stats
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     $stats = getTodayStats();
     header('Content-Type: application/json');
@@ -349,9 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     exit;
 }
 
-// ========================================
-// HTML INTERFACE
-// ========================================
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -528,7 +479,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     </div>
 
     <script>
-        // Load statistik
         function loadStats() {
             fetch('?stats=1')
                 .then(response => response.json())
@@ -541,7 +491,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 .catch(error => console.log('Stats load error:', error));
         }
 
-        // Form submit
         document.getElementById('boostForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -550,7 +499,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             const result = document.getElementById('result');
             const submitBtn = document.querySelector('.btn');
             
-            // Show loading
             loading.style.display = 'block';
             result.innerHTML = '';
             submitBtn.disabled = true;
@@ -597,10 +545,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             });
         });
 
-        // Load stats saat halaman dimuat
         loadStats();
-        
-        // Update stats setiap 30 detik
         setInterval(loadStats, 30000);
     </script>
 </body>
