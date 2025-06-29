@@ -895,13 +895,39 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                             });
                             
                             // Set WhatsApp contact link for user
-                            const whatsappMessage = `Halo Admin, saya sudah transfer Dana Rp 50.000 untuk license premium TikTok View Booster. Kode transaksi: ${data.unique_code}. Berikut bukti transfernya:`;
+                            const whatsappMessage = `📱 *BUKTI TRANSFER DANA*
+
+Halo Admin TikTok Booster,
+
+✅ Saya sudah melakukan transfer Dana:
+💰 Nominal: Rp 50.000
+🆔 Kode Transaksi: ${data.unique_code}
+📅 Tanggal: ${new Date().toLocaleDateString('id-ID')}
+
+🎯 *Tujuan:* Aktivasi License Premium
+📄 *Bukti Transfer:* (akan dilampirkan)
+
+Mohon diproses untuk aktivasi unlimited access.
+Terima kasih! 🙏`;
                             const whatsappUrl = `${data.admin_contact}?text=${encodeURIComponent(whatsappMessage)}`;
                             document.getElementById('whatsapp-contact').href = whatsappUrl;
                             
                             // Create verification link for admin
                             const verificationLink = `${window.location.origin}${window.location.pathname}?verify=${data.unique_code}`;
-                            const adminMessage = `✅ VERIFIKASI PEMBAYARAN DANA\\n\\nUser telah transfer Rp 50.000\\nKode: ${data.unique_code}\\n\\n🔗 Klik link ini untuk aktivasi:\\n${verificationLink}`;
+                            const adminMessage = `🔔 *KONFIRMASI PEMBAYARAN DANA*
+
+📋 *Detail Transaksi:*
+💰 Jumlah: Rp 50.000
+🆔 Kode: ${data.unique_code}
+📅 Waktu: ${new Date().toLocaleString('id-ID')}
+
+✅ *Status:* User sudah transfer Dana
+🎯 *Tindakan:* Aktivasi license premium
+
+🔗 *Link Verifikasi Admin:*
+${verificationLink}
+
+_Klik link di atas untuk aktivasi otomatis_`;
                             
                             // Add admin verification button
                             const adminButton = document.createElement('a');
