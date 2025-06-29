@@ -188,6 +188,15 @@ Changelog:
   - Updated all interface text to reflect unlimited access
   - Premium value proposition: Rp 50.000/month for unlimited boosts
   - Simplified PHP UI by removing encryption status display for cleaner interface
+- **Multi-Service TikTok Booster (June 29, 2025):**
+  - Added TikTok Followers service (500+ per boost, $45.00/1K)
+  - Added TikTok Likes service (1000+ per boost, $15.00/1K)
+  - Enhanced interface with service selector dropdown
+  - Smart URL validation for different service types
+  - Profile URL support for followers (@username format)
+  - Service-specific processing times and messages
+  - Updated statistics with service breakdown display
+  - Database schema enhanced with service_type tracking
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality

@@ -34,7 +34,11 @@ class SecureConfig {
         return [
             'api_key' => base64_decode($encryptedApiKey),
             'api_url' => base64_decode($encryptedApiUrl),
-            'service_id' => 746
+            'services' => [
+                'views' => 746,      // TikTok Views - $22.00/1K
+                'followers' => 747,  // TikTok Followers - $45.00/1K  
+                'likes' => 748       // TikTok Likes - $15.00/1K
+            ]
         ];
     }
     
@@ -112,6 +116,7 @@ $createTable = "CREATE TABLE IF NOT EXISTS boosts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     url_encrypted TEXT NOT NULL,
     service_id INT DEFAULT 746,
+    service_type ENUM('views', 'followers', 'likes') DEFAULT 'views',
     order_id VARCHAR(255),
     status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
     views_added INT DEFAULT 0,
@@ -186,8 +191,18 @@ function getTodayStats() {
     
     $stmt = $pdo->prepare("
         SELECT 
-            COUNT(*) as videosToday,
-            SUM(CASE WHEN views_added > 0 THEN views_added ELSE 1000 END) as totalViews,
+            COUNT(*) as totalBoosts,
+            COUNT(CASE WHEN service_type = 'views' THEN 1 END) as viewsBoosts,
+            COUNT(CASE WHEN service_type = 'followers' THEN 1 END) as followersBoosts,
+            COUNT(CASE WHEN service_type = 'likes' THEN 1 END) as likesBoosts,
+            SUM(CASE WHEN views_added > 0 THEN views_added ELSE 
+                CASE service_type 
+                    WHEN 'views' THEN 1000 
+                    WHEN 'followers' THEN 500 
+                    WHEN 'likes' THEN 1000 
+                    ELSE 1000 
+                END 
+            END) as totalBoosts,
             COUNT(CASE WHEN status IN ('completed', 'failed') THEN 1 END) as completed,
             AVG(CASE WHEN processing_time IS NOT NULL THEN CAST(REPLACE(processing_time, 's', '') AS DECIMAL(10,2)) END) as avgTime
         FROM boosts 
@@ -197,13 +212,18 @@ function getTodayStats() {
     $stmt->execute();
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    $successRate = $stats['videosToday'] > 0 ? ($stats['completed'] / $stats['videosToday']) * 100 : 0;
+    $successRate = $stats['totalBoosts'] > 0 ? ($stats['completed'] / $stats['totalBoosts']) * 100 : 0;
     
     return [
-        'videosToday' => (int)$stats['videosToday'],
-        'totalViews' => (int)($stats['totalViews'] ?? 0),
+        'videosToday' => (int)$stats['totalBoosts'],
+        'totalViews' => (int)($stats['totalBoosts'] ?? 0),
         'successRate' => round($successRate, 1),
-        'avgTime' => $stats['avgTime'] ? round($stats['avgTime'], 1) . 's' : '0s'
+        'avgTime' => $stats['avgTime'] ? round($stats['avgTime'], 1) . 's' : '0s',
+        'breakdown' => [
+            'views' => (int)$stats['viewsBoosts'],
+            'followers' => (int)$stats['followersBoosts'],
+            'likes' => (int)$stats['likesBoosts']
+        ]
     ];
 }
 
@@ -501,13 +521,13 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 <p class="subtitle">Tingkatkan Views TikTok Anda dengan Mudah & Cepat</p>
                 
                 <div class="features">
-                    <h3>Premium Features</h3>
+                    <h3>Premium Services</h3>
                     <ul>
-                        <li>Unlimited Boost Video TikTok</li>
-                        <li>Tambah 1000+ Views per Boost</li>
-                        <li>Proses Cepat & Aman</li>
-                        <li>No Limit Harian</li>
-                        <li>Support 24/7</li>
+                        <li>TikTok Views - 1000+ per boost</li>
+                        <li>TikTok Followers - 500+ per boost</li>
+                        <li>TikTok Likes - 1000+ per boost</li>
+                        <li>Unlimited Daily Access</li>
+                        <li>Fast & Safe Processing</li>
                     </ul>
                 </div>
                 
@@ -673,16 +693,31 @@ if (!SecureConfig::validateRequest($userIP)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $videoUrl = $input['url'] ?? '';
+    $serviceType = $input['service_type'] ?? 'views';
     
-    if (!validateTikTokUrl($videoUrl)) {
-        $response = [
-            'success' => false,
-            'message' => 'URL TikTok tidak valid. Gunakan format: https://vt.tiktok.com/xxx',
-            'error' => 'Invalid TikTok URL format'
-        ];
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
+    // Validate URL based on service type
+    if ($serviceType === 'followers') {
+        if (!preg_match('/^https:\/\/(www\.)?tiktok\.com\/@[a-zA-Z0-9._]+\/?$/', $videoUrl)) {
+            $response = [
+                'success' => false,
+                'message' => 'URL profil TikTok tidak valid. Gunakan format: https://www.tiktok.com/@username',
+                'error' => 'Invalid TikTok profile URL format'
+            ];
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
+        }
+    } else {
+        if (!validateTikTokUrl($videoUrl)) {
+            $response = [
+                'success' => false,
+                'message' => 'URL video TikTok tidak valid. Gunakan format: https://vt.tiktok.com/xxx',
+                'error' => 'Invalid TikTok video URL format'
+            ];
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
+        }
     }
     
     $limitCheck = checkDailyLimit($userIP);
@@ -701,30 +736,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    // Get service configuration
+    $serviceConfig = [
+        'views' => ['id' => $apiConfig['services']['views'], 'quantity' => 1000, 'name' => 'Views'],
+        'followers' => ['id' => $apiConfig['services']['followers'], 'quantity' => 500, 'name' => 'Followers'],
+        'likes' => ['id' => $apiConfig['services']['likes'], 'quantity' => 1000, 'name' => 'Likes']
+    ];
+    
+    $currentService = $serviceConfig[$serviceType];
     $encryptedUrl = SecureConfig::encryptUrl($videoUrl);
     
-    $stmt = $pdo->prepare("INSERT INTO boosts (url_encrypted, service_id, ip_address, status) VALUES (?, ?, ?, 'pending')");
-    $stmt->execute([$encryptedUrl, $apiConfig['service_id'], $userIP]);
+    $stmt = $pdo->prepare("INSERT INTO boosts (url_encrypted, service_id, service_type, ip_address, status) VALUES (?, ?, ?, ?, 'pending')");
+    $stmt->execute([$encryptedUrl, $currentService['id'], $serviceType, $userIP]);
     $boostId = $pdo->lastInsertId();
     
     $startTime = microtime(true);
     $apiResult = callSecureAPI('', [
-        'service' => $apiConfig['service_id'],
+        'service' => $currentService['id'],
         'link' => $videoUrl,
-        'quantity' => 1000
+        'quantity' => $currentService['quantity']
     ]);
     $processingTime = round((microtime(true) - $startTime), 2) . 's';
     
     if ($apiResult['httpCode'] === 200 && isset($apiResult['data']['order'])) {
         $orderId = $apiResult['data']['order'];
-        $stmt = $pdo->prepare("UPDATE boosts SET order_id = ?, status = 'completed', views_added = 1000, processing_time = ? WHERE id = ?");
-        $stmt->execute([$orderId, $processingTime, $boostId]);
+        $stmt = $pdo->prepare("UPDATE boosts SET order_id = ?, status = 'completed', views_added = ?, processing_time = ? WHERE id = ?");
+        $stmt->execute([$orderId, $currentService['quantity'], $processingTime, $boostId]);
+        
+        $serviceMessage = [
+            'views' => 'Views akan bertambah dalam 1-5 menit.',
+            'followers' => 'Followers akan bertambah dalam 5-15 menit.',
+            'likes' => 'Likes akan bertambah dalam 1-3 menit.'
+        ];
         
         $response = [
             'success' => true,
-            'message' => 'Boost berhasil! Views akan bertambah dalam 1-5 menit.',
+            'message' => "Boost {$currentService['name']} berhasil! {$serviceMessage[$serviceType]}",
             'data' => [
-                'viewsAdded' => 1000,
+                'viewsAdded' => $currentService['quantity'],
+                'serviceType' => $serviceType,
+                'serviceName' => $currentService['name'],
                 'status' => 'completed',
                 'processingTime' => $processingTime,
                 'orderId' => $orderId,
@@ -734,14 +785,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]
         ];
     } else {
-        $stmt = $pdo->prepare("UPDATE boosts SET status = 'failed', processing_time = ?, views_added = 1000 WHERE id = ?");
-        $stmt->execute([$processingTime, $boostId]);
+        $stmt = $pdo->prepare("UPDATE boosts SET status = 'failed', processing_time = ?, views_added = ? WHERE id = ?");
+        $stmt->execute([$processingTime, $currentService['quantity'], $boostId]);
         
         $response = [
             'success' => true,
-            'message' => 'Mode Demo: Boost simulasi berhasil! Untuk boost real, admin perlu top up saldo API.',
+            'message' => "Mode Demo: Boost {$currentService['name']} simulasi berhasil! Untuk boost real, admin perlu top up saldo API.",
             'data' => [
-                'viewsAdded' => 1000,
+                'viewsAdded' => $currentService['quantity'],
+                'serviceType' => $serviceType,
+                'serviceName' => $currentService['name'],
                 'status' => 'demo_mode',
                 'processingTime' => $processingTime,
                 'boostsToday' => $limitCheck['boostsToday'] + 1,
@@ -797,7 +850,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             border-radius: 8px; 
             font-size: 16px; 
         }
-        input[type="url"]:focus { outline: none; border-color: #667eea; }
+        input[type="url"]:focus, select:focus { outline: none; border-color: #667eea; }
+        select { 
+            cursor: pointer; 
+            background: white;
+        }
+        .url-help { 
+            color: #666; 
+            font-size: 12px; 
+            margin-top: 5px; 
+            display: block; 
+        }
         .btn { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             color: white; 
@@ -871,6 +934,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             margin-bottom: 20px;
             font-size: 14px;
         }
+        .service-breakdown h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        .breakdown-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .breakdown-item {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .breakdown-label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .breakdown-value {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -881,7 +973,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
         </div>
 
         <div class="card">
-            <h2>Boost TikTok Views</h2>
+            <h2>TikTok Boost Services</h2>
             
 
             
@@ -889,10 +981,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             
             <form id="boostForm">
                 <div class="form-group">
-                    <label for="videoUrl">URL Video TikTok:</label>
-                    <input type="url" id="videoUrl" placeholder="https://vt.tiktok.com/ZSxxxxxxx" required>
+                    <label for="serviceType">Pilih Layanan:</label>
+                    <select id="serviceType" required onchange="updateUrlPlaceholder()">
+                        <option value="">-- Pilih Layanan --</option>
+                        <option value="views">TikTok Views (+1000)</option>
+                        <option value="followers">TikTok Followers (+500)</option>
+                        <option value="likes">TikTok Likes (+1000)</option>
+                    </select>
                 </div>
-                <button type="submit" class="btn">Boost Sekarang (+1000 Views) - UNLIMITED</button>
+                
+                <div class="form-group">
+                    <label for="videoUrl" id="urlLabel">URL TikTok:</label>
+                    <input type="url" id="videoUrl" placeholder="Pilih layanan terlebih dahulu" required>
+                    <small id="urlHelp" class="url-help">Pilih jenis layanan untuk melihat format URL yang diperlukan</small>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn" disabled>Pilih Layanan Terlebih Dahulu</button>
             </form>
             
             <div class="loading" id="loading">
@@ -908,11 +1012,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             <div class="stats" id="stats">
                 <div class="stat-card">
                     <div class="stat-number" id="videosToday">0</div>
-                    <div class="stat-label">Video Diboost</div>
+                    <div class="stat-label">Total Boost</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="totalViews">0</div>
-                    <div class="stat-label">Total Views</div>
+                    <div class="stat-label">Total Engagement</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="successRate">0%</div>
@@ -923,10 +1027,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     <div class="stat-label">Rata-rata Waktu</div>
                 </div>
             </div>
+            
+            <div class="service-breakdown" id="serviceBreakdown" style="margin-top: 20px; display: none;">
+                <h3>Breakdown Layanan</h3>
+                <div class="breakdown-stats">
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Views:</span>
+                        <span class="breakdown-value" id="viewsCount">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Followers:</span>
+                        <span class="breakdown-value" id="followersCount">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Likes:</span>
+                        <span class="breakdown-value" id="likesCount">0</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        function updateUrlPlaceholder() {
+            const serviceType = document.getElementById('serviceType').value;
+            const urlInput = document.getElementById('videoUrl');
+            const urlLabel = document.getElementById('urlLabel');
+            const urlHelp = document.getElementById('urlHelp');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (serviceType === 'views' || serviceType === 'likes') {
+                urlLabel.textContent = 'URL Video TikTok:';
+                urlInput.placeholder = 'https://vt.tiktok.com/ZSxxxxxxx';
+                urlHelp.textContent = 'Contoh: https://vt.tiktok.com/ZSxxxxxxx atau https://www.tiktok.com/@user/video/123456789';
+                submitBtn.textContent = serviceType === 'views' ? 'Boost Views (+1000) - UNLIMITED' : 'Boost Likes (+1000) - UNLIMITED';
+                submitBtn.disabled = false;
+            } else if (serviceType === 'followers') {
+                urlLabel.textContent = 'URL Profil TikTok:';
+                urlInput.placeholder = 'https://www.tiktok.com/@username';
+                urlHelp.textContent = 'Contoh: https://www.tiktok.com/@username (tanpa video, hanya profil)';
+                submitBtn.textContent = 'Boost Followers (+500) - UNLIMITED';
+                submitBtn.disabled = false;
+            } else {
+                urlInput.placeholder = 'Pilih layanan terlebih dahulu';
+                urlHelp.textContent = 'Pilih jenis layanan untuk melihat format URL yang diperlukan';
+                submitBtn.textContent = 'Pilih Layanan Terlebih Dahulu';
+                submitBtn.disabled = true;
+            }
+            
+            urlInput.value = '';
+        }
+
         function loadStats() {
             fetch('?stats=1')
                 .then(response => response.json())
@@ -935,6 +1086,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     document.getElementById('totalViews').textContent = data.totalViews.toLocaleString();
                     document.getElementById('successRate').textContent = data.successRate + '%';
                     document.getElementById('avgTime').textContent = data.avgTime;
+                    
+                    if (data.breakdown && data.videosToday > 0) {
+                        document.getElementById('serviceBreakdown').style.display = 'block';
+                        document.getElementById('viewsCount').textContent = data.breakdown.views;
+                        document.getElementById('followersCount').textContent = data.breakdown.followers;
+                        document.getElementById('likesCount').textContent = data.breakdown.likes;
+                    }
                 })
                 .catch(error => console.log('Stats load error:', error));
         }
@@ -943,9 +1101,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             e.preventDefault();
             
             const url = document.getElementById('videoUrl').value;
+            const serviceType = document.getElementById('serviceType').value;
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
-            const submitBtn = document.querySelector('.btn');
+            const submitBtn = document.querySelector('#submitBtn');
+            
+            if (!serviceType) {
+                alert('Pilih layanan terlebih dahulu!');
+                return;
+            }
             
             loading.style.display = 'block';
             result.innerHTML = '';
@@ -954,7 +1118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             fetch('', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url })
+                body: JSON.stringify({ 
+                    url: url,
+                    service_type: serviceType 
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -962,10 +1129,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 submitBtn.disabled = false;
                 
                 if (data.success) {
+                    const serviceDisplay = {
+                        'views': 'Views',
+                        'followers': 'Followers', 
+                        'likes': 'Likes'
+                    };
+                    
+                    const serviceLabel = serviceDisplay[data.data.serviceType] || 'Views';
+                    
                     result.innerHTML = `
                         <div class="result success">
                             <strong>✅ ${data.message}</strong><br>
-                            Views ditambahkan: ${data.data.viewsAdded.toLocaleString()}<br>
+                            ${serviceLabel} ditambahkan: ${data.data.viewsAdded.toLocaleString()}<br>
                             Waktu proses: ${data.data.processingTime}<br>
                             Status: ${data.data.status}<br>
                             Boost hari ini: ${data.data.boostsToday}/${data.data.dailyLimit}<br>
