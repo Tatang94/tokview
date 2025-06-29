@@ -20,10 +20,10 @@ class SecureConfig {
     
     public static function getDatabaseConfig() {
         return [
-            'host' => 'sql111.infinityfree.com',
-            'dbname' => 'if0_39341535_view',
-            'username' => 'if0_39341535',
-            'password' => 'SHRMPj7PvCo'
+            'host' => 'localhost',
+            'dbname' => 'atzpuls1_buka',
+            'username' => 'atzpuls1_buka',
+            'password' => 'Buka@100'
         ];
     }
     
