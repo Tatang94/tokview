@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const tiktokBoosts = pgTable("tiktok_boosts", {
@@ -15,6 +16,7 @@ export const tiktokBoosts = pgTable("tiktok_boosts", {
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   viewsAdded: integer("views_added").default(0),
   processingTime: text("processing_time"),
+  serviceType: text("service_type").default("views"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -42,6 +44,7 @@ export const tiktokBoostSchema = z.object({
 export const insertTiktokBoostSchema = createInsertSchema(tiktokBoosts).pick({
   url: true,
   ipAddress: true,
+  serviceType: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

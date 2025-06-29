@@ -38,11 +38,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Test database connection before starting server
+  // Test database connection but continue without it if needed
   const isDbConnected = await testConnection();
   if (!isDbConnected) {
-    log("Failed to connect to database. Exiting...");
-    process.exit(1);
+    log("Database not available, continuing with in-memory storage...");
+  } else {
+    log("Database connection successful!");
   }
 
   const server = await registerRoutes(app);
