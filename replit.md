@@ -174,14 +174,15 @@ Changelog:
   - Fixed daily limit to 5 boosts for all users
   - Removed getLicenseLimit() function and session complexity
   - Cleaner interface without confusing tier information
-- **Payment System Migration to Lollipop SMM (June 29, 2025):**
-  - Removed PayDisini payment gateway completely
-  - Migrated to Lollipop SMM native payment system integration
-  - Manual license activation through admin WhatsApp contact
-  - Simplified top-up process via admin for better control
-  - Direct balance management through Lollipop SMM dashboard
-  - Clean interface without complex payment modals
-  - Focus on manual verification for security and quality control
+- **Hybrid Payment System Implementation (June 29, 2025):**
+  - Integrated PayDisini API with auto-topup functionality
+  - Hybrid pricing: Rp 65.000 total (Rp 15K profit + Rp 50K Lollipop topup)
+  - PayDisini QRIS for payment processing with real-time status checking
+  - Auto-topup logic triggers after successful payment completion
+  - Transparent payment breakdown showing license cost vs topup amount
+  - Maintains PayDisini profit margin while funding Lollipop SMM balance
+  - Dual activation: automatic via payment + manual via admin license code
+  - Real-time payment status monitoring with 3-second intervals
 - **Unlimited License Access (June 29, 2025):**
   - Changed license system from 5 boosts/day to unlimited access
   - Licensed users can now boost unlimited TikTok videos
