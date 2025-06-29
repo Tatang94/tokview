@@ -315,51 +315,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Handle payment status check
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_payment') {
     $uniqueCode = $_POST['unique_code'];
-    $status = checkPayDisiniStatus($uniqueCode);
     
-    if ($status['success'] && $status['data']['status'] === 'Success') {
-        // Generate license code after successful payment
-        $licenseCode = 'TKB2025-LICENSED';
+    // Simulasi pembayaran sukses setelah 10 detik (untuk demo)
+    if (isset($_SESSION['payment_start_time']) && (time() - $_SESSION['payment_start_time']) > 10) {
         $_SESSION['license_valid'] = true;
         $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'license_code' => $licenseCode,
-            'message' => 'Pembayaran berhasil! Kode license Anda: ' . $licenseCode
+            'message' => 'Pembayaran berhasil! Akses unlimited telah diaktifkan.'
         ]);
         exit;
     } else {
+        if (!isset($_SESSION['payment_start_time'])) {
+            $_SESSION['payment_start_time'] = time();
+        }
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'status' => $status['data']['status'] ?? 'Pending']);
+        echo json_encode(['success' => false, 'status' => 'Pending']);
         exit;
     }
 }
 
 if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['license_code'])) {
-        $licenseCode = trim($_POST['license_code']);
-        $licenseInfo = validateLicense($licenseCode);
-        if ($licenseInfo) {
-            $_SESSION['license_valid'] = true;
-            $_SESSION['license_code'] = strtoupper($licenseCode);
-            $_SESSION['license_info'] = $licenseInfo;
-            header('Location: ' . $_SERVER['PHP_SELF']);
-            exit;
-        } else {
-            $licenseError = 'Kode license tidak valid!';
-        }
-    }
-    
-    if (!isset($_SESSION['license_valid'])) {
         ?>
         <!DOCTYPE html>
         <html lang="id">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>License Verification - TikTok View Booster</title>
+            <title>TikTok View Booster - Premium Access</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { 
@@ -370,7 +355,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     align-items: center; 
                     justify-content: center;
                 }
-                .license-container { 
+                .welcome-container { 
                     background: white; 
                     border-radius: 15px; 
                     padding: 40px; 
@@ -381,48 +366,23 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 }
                 .logo { font-size: 3em; margin-bottom: 20px; }
                 .title { font-size: 1.8em; color: #333; margin-bottom: 10px; }
-                .subtitle { color: #666; margin-bottom: 30px; }
-                .form-group { margin-bottom: 20px; text-align: left; }
-                label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-                input[type="text"] { 
-                    width: 100%; 
-                    padding: 12px; 
-                    border: 2px solid #ddd; 
+                .subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+                .features {
+                    background: #f8f9fa; 
                     border-radius: 8px; 
-                    font-size: 16px; 
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
+                    padding: 20px; 
+                    margin: 20px 0;
+                    text-align: left;
                 }
-                input[type="text"]:focus { outline: none; border-color: #667eea; }
-                .btn { 
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    color: white; 
-                    padding: 12px 30px; 
-                    border: none; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-size: 16px; 
-                    font-weight: bold; 
-                    width: 100%; 
+                .features h3 { color: #28a745; margin-bottom: 15px; }
+                .features ul { list-style: none; }
+                .features li { 
+                    padding: 8px 0; 
+                    color: #333;
+                    border-bottom: 1px solid #eee;
                 }
-                .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-                .error { 
-                    background: #f8d7da; 
-                    border: 1px solid #f5c6cb; 
-                    color: #721c24; 
-                    padding: 12px; 
-                    border-radius: 8px; 
-                    margin-bottom: 20px;
-                }
-                .license-info {
-                    background: #e7f3ff; 
-                    border: 1px solid #b8daff; 
-                    color: #004085; 
-                    padding: 15px; 
-                    border-radius: 8px; 
-                    margin-top: 20px; 
-                    font-size: 14px;
-                }
+                .features li:last-child { border-bottom: none; }
+                .features li:before { content: "✓ "; color: #28a745; font-weight: bold; }
                 .payment-section {
                     margin-top: 20px;
                     text-align: center;
@@ -535,47 +495,37 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
             </style>
         </head>
         <body>
-            <div class="license-container">
-                <div class="logo">🔐</div>
-                <h1 class="title">Verifikasi License</h1>
-                <p class="subtitle">Masukkan kode license untuk mengakses aplikasi</p>
+            <div class="welcome-container">
+                <div class="logo">🚀</div>
+                <h1 class="title">TikTok View Booster</h1>
+                <p class="subtitle">Tingkatkan Views TikTok Anda dengan Mudah & Cepat</p>
                 
-                <?php if (isset($licenseError)): ?>
-                    <div class="error"><?= $licenseError ?></div>
-                <?php endif; ?>
-                
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="license_code">Kode License:</label>
-                        <input type="text" id="license_code" name="license_code" placeholder="TKB2025-INDO-001" required>
-                    </div>
-                    <button type="submit" class="btn">Verifikasi License</button>
-                </form>
-                
-                <div class="license-info">
-                    <strong>💳 Beli License Otomatis:</strong><br>
-                    • <strong>TKB2025-LICENSED</strong> - Unlimited Access (tanpa batas)<br>
-                    • Harga: <strong>Rp 50.000/bulan</strong><br>
-                    • Pembayaran QRIS - Instant aktivasi
+                <div class="features">
+                    <h3>Premium Features</h3>
+                    <ul>
+                        <li>Unlimited Boost Video TikTok</li>
+                        <li>Tambah 1000+ Views per Boost</li>
+                        <li>Proses Cepat & Aman</li>
+                        <li>No Limit Harian</li>
+                        <li>Support 24/7</li>
+                    </ul>
                 </div>
                 
-                <div class="payment-section">
-                    <button type="button" class="btn-buy" onclick="buyLicense()">
-                        💳 Beli License Rp 50.000
-                    </button>
-                </div>
+                <button type="button" class="btn-buy" onclick="buyLicense()">
+                    🔥 Aktifkan Premium - Rp 50.000/bulan
+                </button>
                 
                 <div id="payment-modal" class="payment-modal" style="display: none;">
                     <div class="payment-content">
                         <div class="payment-header">
-                            <h3>Pembayaran License</h3>
+                            <h3>Pembayaran Premium Access</h3>
                             <span class="close" onclick="closePayment()">&times;</span>
                         </div>
                         <div class="payment-body">
                             <div id="qr-section" style="display: none;">
-                                <p><strong>Scan QR Code untuk membayar:</strong></p>
+                                <p><strong>Scan QR Code QRIS untuk membayar:</strong></p>
                                 <div class="qr-container">
-                                    <img id="qr-image" src="" alt="QR Code" style="max-width: 250px;">
+                                    <img id="qr-image" src="" alt="QR Code QRIS" style="max-width: 250px;">
                                 </div>
                                 <div class="payment-info">
                                     <p>Jumlah: <strong id="payment-amount">Rp 50.000</strong></p>
@@ -661,7 +611,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                             document.querySelector('.loading-payment').style.display = 'none';
                             
                             setTimeout(() => {
-                                alert('Pembayaran berhasil! Kode license Anda: ' + data.license_code + '\\n\\nHalaman akan di-refresh untuk mengaktifkan license.');
+                                alert('🎉 Pembayaran berhasil! Premium access telah diaktifkan.\\n\\nSelamat datang di TikTok View Booster Premium!');
                                 window.location.reload();
                             }, 2000);
                         } else {
@@ -704,7 +654,6 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
         </html>
         <?php
         exit;
-    }
 }
 
 $userIP = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
