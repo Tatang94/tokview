@@ -423,13 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
         <div class="card">
             <h2>Boost TikTok Views</h2>
             
-            <div class="encryption-status">
-                <strong>🔐 Status Enkripsi:</strong><br>
-                • URL dan data sensitif dienkripsi dengan AES-256-CBC<br>
-                • API key dan URL endpoint tersembunyi dalam kode terenkripsi<br>
-                • Database credentials dilindungi enkripsi<br>
-                • Semua dalam satu file untuk kemudahan deployment
-            </div>
+
             
             <div class="security-info">
                 <strong>🛡️ Perlindungan Keamanan:</strong><br>

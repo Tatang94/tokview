@@ -187,6 +187,7 @@ Changelog:
   - Daily limit set to 999 (effectively unlimited)
   - Updated all interface text to reflect unlimited access
   - Premium value proposition: Rp 50.000/month for unlimited boosts
+  - Simplified PHP UI by removing encryption status display for cleaner interface
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
