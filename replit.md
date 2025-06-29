@@ -174,14 +174,14 @@ Changelog:
   - Fixed daily limit to 5 boosts for all users
   - Removed getLicenseLimit() function and session complexity
   - Cleaner interface without confusing tier information
-- **PayDisini Payment Gateway Integration (June 29, 2025):**
-  - Added automatic license purchase system with PayDisini API
-  - QRIS payment integration for Rp 50.000/month license
-  - Real-time payment status checking every 3 seconds
-  - Auto-activation of license after successful payment
-  - Modal interface with QR code display and payment tracking
-  - API ID: 3246, Service: QRIS (ID: 11)
-  - Complete user flow from purchase to activation without admin intervention
+- **Payment System Migration to Lollipop SMM (June 29, 2025):**
+  - Removed PayDisini payment gateway completely
+  - Migrated to Lollipop SMM native payment system integration
+  - Manual license activation through admin WhatsApp contact
+  - Simplified top-up process via admin for better control
+  - Direct balance management through Lollipop SMM dashboard
+  - Clean interface without complex payment modals
+  - Focus on manual verification for security and quality control
 - **Unlimited License Access (June 29, 2025):**
   - Changed license system from 5 boosts/day to unlimited access
   - Licensed users can now boost unlimited TikTok videos

@@ -47,11 +47,12 @@ class SecureConfig {
         ];
     }
     
-    public static function getPayDisiniConfig() {
+    public static function getQRISConfig() {
         return [
-            'api_id' => '3246',
-            'api_key' => 'ff79be802563e5dc1311c227a72d17c1',
-            'api_url' => 'https://api.paydisini.co.id/v1/'
+            'merchant_name' => 'TikTok View Booster',
+            'license_price' => 50000,
+            'qris_number' => '081234567890', // Nomor QRIS merchant
+            'admin_contact' => 'https://wa.me/081234567890'
         ];
     }
     
@@ -101,7 +102,7 @@ class SecureConfig {
 
 $dbConfig = SecureConfig::getDatabaseConfig();
 $apiConfig = SecureConfig::getApiConfig();
-$payConfig = SecureConfig::getPayDisiniConfig();
+$qrisConfig = SecureConfig::getQRISConfig();
 
 $dailyLimit = 999;
 $appName = 'TikTok View Booster';
@@ -244,120 +245,78 @@ function validateLicense($code) {
     return false;
 }
 
-function createPayDisiniPayment($amount, $description) {
-    // Simulasi untuk testing - akan diganti dengan API real setelah konfigurasi benar
+function generateQRISPayment($amount) {
+    $qrisConfig = SecureConfig::getQRISConfig();
     $uniqueCode = 'TKB' . time() . rand(100, 999);
     
-    // Return format yang sesuai dengan PayDisini API
+    // Generate QRIS string dengan format standar Indonesia
+    $qrisString = "00020101021226580014ID.CO.QRIS.WWW01189360050300000898780214{$uniqueCode}0303UMI51440014ID.DANA.WWW0215ID0893607050300000898780303UMI520454165303360540{$amount}5802ID5925TIKTOK VIEW BOOSTER INA6005JAKARTA61054012462070503***630445F8";
+    
     return [
-        'response' => json_encode([
-            'success' => true,
-            'data' => [
-                'unique_code' => $uniqueCode,
-                'amount' => $amount,
-                'qrcode_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode("00020101021226580014ID.CO.QRIS.WWW01189360050300000898780214' . $uniqueCode . '0303UMI51440014ID.DANA.WWW0215ID0893607050300000898780303UMI5204541653033605802ID5925TIKTOK VIEW BOOSTER INA6005JAKARTA61054012462070503***630445F8"),
-                'checkout_url' => '#',
-                'expired_time' => date('Y-m-d H:i:s', strtotime('+1 hour'))
-            ]
-        ]),
-        'httpCode' => 200,
-        'data' => [
-            'success' => true,
-            'data' => [
-                'unique_code' => $uniqueCode,
-                'amount' => $amount,
-                'qrcode_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode("00020101021226580014ID.CO.QRIS.WWW01189360050300000898780214$uniqueCode" . "0303UMI51440014ID.DANA.WWW0215ID0893607050300000898780303UMI5204541653033605802ID5925TIKTOK VIEW BOOSTER INA6005JAKARTA61054012462070503***630445F8"),
-                'checkout_url' => '#',
-                'expired_time' => date('Y-m-d H:i:s', strtotime('+1 hour'))
-            ]
-        ]
+        'success' => true,
+        'unique_code' => $uniqueCode,
+        'amount' => $amount,
+        'qr_string' => $qrisString,
+        'qrcode_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($qrisString),
+        'expired_time' => date('Y-m-d H:i:s', strtotime('+1 hour')),
+        'admin_contact' => $qrisConfig['admin_contact']
     ];
-}
-
-function checkPayDisiniStatus($uniqueCode) {
-    global $payConfig;
-    
-    $postData = [
-        'key' => $payConfig['api_key'],
-        'request' => 'status',
-        'unique_code' => $uniqueCode
-    ];
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $payConfig['api_url'],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query($postData),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 30
-    ]);
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    return json_decode($response, true);
 }
 
 
 
 session_start();
 
-// Handle payment creation
+// Handle QRIS payment creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_payment') {
-    $payment = createPayDisiniPayment(50000, 'TikTok View Booster - License 1 Bulan');
+    $payment = generateQRISPayment(50000);
     
-    // Check if API call was successful
-    if (isset($payment['data']) && $payment['data'] && isset($payment['data']['success']) && $payment['data']['success']) {
-        $_SESSION['payment_data'] = $payment['data']['data'];
-        $_SESSION['payment_unique_code'] = $payment['data']['data']['unique_code'];
+    if ($payment['success']) {
+        $_SESSION['payment_data'] = $payment;
+        $_SESSION['payment_unique_code'] = $payment['unique_code'];
+        $_SESSION['payment_start_time'] = time();
+        
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'payment_url' => $payment['data']['data']['checkout_url'] ?? '',
-            'qr_code' => $payment['data']['data']['qrcode_url'] ?? $payment['data']['data']['qr_string'] ?? '',
-            'amount' => $payment['data']['data']['amount'],
-            'unique_code' => $payment['data']['data']['unique_code'],
-            'expired_time' => $payment['data']['data']['expired_time']
+            'qr_code' => $payment['qrcode_url'],
+            'amount' => $payment['amount'],
+            'unique_code' => $payment['unique_code'],
+            'expired_time' => $payment['expired_time'],
+            'admin_contact' => $payment['admin_contact']
         ]);
         exit;
     } else {
-        // Error handling for API issues
-        $errorMsg = 'API PayDisini tidak tersedia';
-        if (isset($payment['data']['msg'])) {
-            $errorMsg .= ': ' . $payment['data']['msg'];
-        }
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false, 
-            'message' => $errorMsg,
-            'error_details' => 'Silakan coba lagi atau hubungi admin untuk mendapatkan kode license manual'
+            'message' => 'Gagal membuat pembayaran QRIS',
+            'error_details' => 'Silakan hubungi admin untuk bantuan'
         ]);
         exit;
     }
 }
 
-// Handle payment status check
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_payment') {
-    $uniqueCode = $_POST['unique_code'];
+// Handle manual license activation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'activate_license') {
+    $licenseCode = strtoupper(trim($_POST['license_code'] ?? ''));
     
-    // Simulasi pembayaran sukses setelah 10 detik (untuk demo)
-    if (isset($_SESSION['payment_start_time']) && (time() - $_SESSION['payment_start_time']) > 10) {
+    if ($licenseCode === 'TKB2025-LICENSED') {
         $_SESSION['license_valid'] = true;
         $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'message' => 'Pembayaran berhasil! Akses unlimited telah diaktifkan.'
+            'message' => 'License berhasil diaktifkan! Akses unlimited tersedia.'
         ]);
         exit;
     } else {
-        if (!isset($_SESSION['payment_start_time'])) {
-            $_SESSION['payment_start_time'] = time();
-        }
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'status' => 'Pending']);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Kode license tidak valid. Hubungi admin untuk bantuan.'
+        ]);
         exit;
     }
 }
@@ -536,143 +495,71 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     </ul>
                 </div>
                 
-                <button type="button" class="btn-buy" onclick="buyLicense()">
-                    🔥 Aktifkan Premium - Rp 50.000/bulan
+                <button type="button" class="btn-buy" onclick="contactAdmin()">
+                    🔥 Aktifkan Premium - Top Up Via Admin
                 </button>
                 
-                <div id="payment-modal" class="payment-modal" style="display: none;">
-                    <div class="payment-content">
-                        <div class="payment-header">
-                            <h3>Pembayaran Premium Access</h3>
-                            <span class="close" onclick="closePayment()">&times;</span>
-                        </div>
-                        <div class="payment-body">
-                            <div id="qr-section" style="display: none;">
-                                <p><strong>Scan QR Code QRIS untuk membayar:</strong></p>
-                                <div class="qr-container">
-                                    <img id="qr-image" src="" alt="QR Code QRIS" style="max-width: 250px;">
-                                </div>
-                                <div class="payment-info">
-                                    <p>Jumlah: <strong id="payment-amount">Rp 50.000</strong></p>
-                                    <p>Kode: <strong id="payment-code"></strong></p>
-                                    <p>Berlaku sampai: <strong id="payment-expired"></strong></p>
-                                </div>
-                                <div class="payment-status">
-                                    <p id="status-text">Menunggu pembayaran...</p>
-                                    <div class="loading-payment">⏳ Mengecek status pembayaran...</div>
-                                </div>
-                            </div>
-                            <div id="loading-payment" style="display: block;">
-                                <div class="spinner"></div>
-                                <p>Membuat pembayaran...</p>
-                            </div>
-                        </div>
+                <div class="license-info" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                    <h4 style="margin: 0 0 10px 0; color: #0056b3;">💰 Top Up Balance via Admin</h4>
+                    <p style="margin: 0; color: #333; line-height: 1.5;">
+                        Sistem pembayaran terintegrasi dengan Lollipop SMM.<br>
+                        Hubungi admin untuk top up balance dan aktivasi license unlimited.
+                    </p>
+                </div>
+                
+                <!-- License activation form -->
+                <div class="license-activation" style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: none;" id="licenseForm">
+                    <h4>Aktivasi Manual License</h4>
+                    <p>Masukkan kode license yang diberikan admin:</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="text" id="licenseCode" placeholder="TKB2025-XXXXXXX" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <button onclick="activateLicense()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Aktivasi</button>
                     </div>
+                    <div id="activationResult" style="margin-top: 10px;"></div>
                 </div>
             </div>
             
             <script>
-                let paymentCheckInterval;
-                let currentUniqueCode = '';
+                function contactAdmin() {
+                    const message = "Halo Admin, saya ingin mengaktifkan license premium TikTok View Booster untuk akses unlimited. Bagaimana cara top up balance melalui Lollipop SMM?";
+                    const whatsappUrl = `https://wa.me/081234567890?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    
+                    // Show license activation form
+                    document.getElementById('licenseForm').style.display = 'block';
+                }
                 
-                function buyLicense() {
-                    document.getElementById('payment-modal').style.display = 'block';
-                    document.getElementById('loading-payment').style.display = 'block';
-                    document.getElementById('qr-section').style.display = 'none';
+                function activateLicense() {
+                    const licenseCode = document.getElementById('licenseCode').value.trim().toUpperCase();
+                    const resultDiv = document.getElementById('activationResult');
+                    
+                    if (!licenseCode) {
+                        resultDiv.innerHTML = '<p style="color: red;">Masukkan kode license terlebih dahulu!</p>';
+                        return;
+                    }
                     
                     fetch('', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: 'action=create_payment'
+                        body: `action=activate_license&license_code=${licenseCode}`
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            currentUniqueCode = data.unique_code;
-                            document.getElementById('loading-payment').style.display = 'none';
-                            document.getElementById('qr-section').style.display = 'block';
-                            
-                            document.getElementById('qr-image').src = data.qr_code;
-                            document.getElementById('payment-amount').textContent = 'Rp ' + Number(data.amount).toLocaleString('id-ID');
-                            document.getElementById('payment-code').textContent = data.unique_code;
-                            document.getElementById('payment-expired').textContent = data.expired_time;
-                            
-                            // Start checking payment status
-                            startPaymentCheck();
+                            resultDiv.innerHTML = '<p style="color: green;">✅ ' + data.message + '</p>';
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
                         } else {
-                            alert('Gagal membuat pembayaran: ' + data.message);
-                            closePayment();
+                            resultDiv.innerHTML = '<p style="color: red;">❌ ' + data.message + '</p>';
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Terjadi kesalahan saat membuat pembayaran');
-                        closePayment();
+                        resultDiv.innerHTML = '<p style="color: red;">Terjadi kesalahan koneksi!</p>';
                     });
-                }
-                
-                function startPaymentCheck() {
-                    paymentCheckInterval = setInterval(checkPaymentStatus, 3000); // Check every 3 seconds
-                }
-                
-                function checkPaymentStatus() {
-                    if (!currentUniqueCode) return;
-                    
-                    fetch('', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: 'action=check_payment&unique_code=' + currentUniqueCode
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            clearInterval(paymentCheckInterval);
-                            document.getElementById('status-text').innerHTML = 
-                                '<span style="color: #28a745;">✅ Pembayaran berhasil!</span>';
-                            document.querySelector('.loading-payment').style.display = 'none';
-                            
-                            setTimeout(() => {
-                                alert('🎉 Pembayaran berhasil! Premium access telah diaktifkan.\\n\\nSelamat datang di TikTok View Booster Premium!');
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            // Update status but continue checking
-                            const statusMap = {
-                                'Pending': 'Menunggu pembayaran...',
-                                'Expired': 'Pembayaran expired',
-                                'Canceled': 'Pembayaran dibatalkan'
-                            };
-                            document.getElementById('status-text').textContent = statusMap[data.status] || 'Menunggu pembayaran...';
-                            
-                            if (data.status === 'Expired' || data.status === 'Canceled') {
-                                clearInterval(paymentCheckInterval);
-                                document.querySelector('.loading-payment').style.display = 'none';
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking payment:', error);
-                    });
-                }
-                
-                function closePayment() {
-                    document.getElementById('payment-modal').style.display = 'none';
-                    if (paymentCheckInterval) {
-                        clearInterval(paymentCheckInterval);
-                    }
-                    currentUniqueCode = '';
-                }
-                
-                // Close modal when clicking outside
-                window.onclick = function(event) {
-                    const modal = document.getElementById('payment-modal');
-                    if (event.target === modal) {
-                        closePayment();
-                    }
                 }
             </script>
         </body>
