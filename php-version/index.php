@@ -20,10 +20,10 @@ class SecureConfig {
     
     public static function getDatabaseConfig() {
         return [
-            'host' => 'sql305.ezyro.com',
-            'dbname' => 'ezyro_39270123_ahay',
-            'username' => 'ezyro_39270123',
-            'password' => 'bec86c42f5'
+            'host' => 'sql111.infinityfree.com',
+            'dbname' => 'if0_39341535_view',
+            'username' => 'if0_39341535',
+            'password' => 'SHRMPj7PvCo'
         ];
     }
     
