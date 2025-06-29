@@ -183,6 +183,10 @@ Changelog:
   - Clear step-by-step payment instructions in modal interface
   - Direct admin contact integration for payment verification
   - Maintains unlimited license access after successful payment verification
+  - Added WhatsApp verification link system for instant admin activation
+  - Auto-generated verification URLs that admin can click to activate licenses
+  - Dual-button system: user sends proof + admin gets verification link
+  - One-click license activation through secure verification URLs
 - **Unlimited License Access (June 29, 2025):**
   - Changed license system from 5 boosts/day to unlimited access
   - Licensed users can now boost unlimited TikTok videos

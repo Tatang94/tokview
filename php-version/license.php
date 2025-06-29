@@ -304,6 +304,20 @@ function processManualTopup($amount) {
 
 session_start();
 
+// Handle automatic verification via link
+if (isset($_GET['verify']) && !empty($_GET['verify'])) {
+    $verifyCode = $_GET['verify'];
+    
+    // Auto-activate license for this verification code
+    $_SESSION['license_valid'] = true;
+    $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
+    $_SESSION['verified_code'] = $verifyCode;
+    $_SESSION['verification_time'] = date('Y-m-d H:i:s');
+    
+    // Set success message
+    $_SESSION['activation_message'] = "✅ License berhasil diaktifkan melalui verifikasi admin! Kode: " . $verifyCode;
+}
+
 // Handle Dana manual payment creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_payment') {
     $paymentConfig = SecureConfig::getPaymentConfig();
@@ -561,6 +575,15 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 <h1 class="title">TikTok View Booster</h1>
                 <p class="subtitle">Tingkatkan Views TikTok Anda dengan Mudah & Cepat</p>
                 
+                <?php if (isset($_SESSION['activation_message'])): ?>
+                    <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h4 style="margin: 0 0 10px 0;">🎉 Aktivasi Berhasil!</h4>
+                        <p style="margin: 0;"><?php echo $_SESSION['activation_message']; ?></p>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;">Sekarang Anda memiliki akses unlimited untuk semua layanan!</p>
+                    </div>
+                    <?php unset($_SESSION['activation_message']); ?>
+                <?php endif; ?>
+                
                 <div class="features">
                     <h3>Premium Services</h3>
                     <ul>
@@ -625,6 +648,15 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                                 <div class="payment-info" style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                                     <p><strong>Kode Transaksi:</strong> <span id="payment-code" style="color: #007bff; font-family: monospace;"></span></p>
                                     <p><strong>Berlaku sampai:</strong> <span id="payment-expired"></span></p>
+                                    
+                                    <div style="background: #e8f5e8; padding: 12px; border-radius: 6px; margin: 15px 0; font-size: 13px; line-height: 1.4;">
+                                        <strong>🎯 Cara Aktivasi Cepat:</strong><br>
+                                        1. Transfer Dana sesuai nominal<br>
+                                        2. Klik "Kirim Bukti Transfer" → kirim screenshot<br>
+                                        3. Klik "Link Verifikasi Admin" → kirim ke admin<br>
+                                        4. Admin klik link → License otomatis aktif!
+                                    </div>
+                                    
                                     <div style="margin-top: 15px;">
                                         <a href="" id="whatsapp-contact" target="_blank" style="display: inline-block; padding: 10px 20px; background: #25d366; color: white; text-decoration: none; border-radius: 5px;">
                                             📱 Kirim Bukti Transfer
@@ -690,10 +722,22 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                                 instructionsList.appendChild(li);
                             });
                             
-                            // Set WhatsApp contact link
+                            // Set WhatsApp contact link for user
                             const whatsappMessage = `Halo Admin, saya sudah transfer Dana Rp 50.000 untuk license premium TikTok View Booster. Kode transaksi: ${data.unique_code}. Berikut bukti transfernya:`;
                             const whatsappUrl = `${data.admin_contact}?text=${encodeURIComponent(whatsappMessage)}`;
                             document.getElementById('whatsapp-contact').href = whatsappUrl;
+                            
+                            // Create verification link for admin
+                            const verificationLink = `${window.location.origin}${window.location.pathname}?verify=${data.unique_code}`;
+                            const adminMessage = `✅ VERIFIKASI PEMBAYARAN DANA\\n\\nUser telah transfer Rp 50.000\\nKode: ${data.unique_code}\\n\\n🔗 Klik link ini untuk aktivasi:\\n${verificationLink}`;
+                            
+                            // Add admin verification button
+                            const adminButton = document.createElement('a');
+                            adminButton.href = `${data.admin_contact}?text=${encodeURIComponent(adminMessage)}`;
+                            adminButton.target = '_blank';
+                            adminButton.style.cssText = 'display: inline-block; margin-left: 10px; padding: 10px 20px; background: #17a2b8; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;';
+                            adminButton.textContent = '🔗 Link Verifikasi Admin';
+                            document.getElementById('whatsapp-contact').parentNode.appendChild(adminButton);
                             
                         } else {
                             document.getElementById('loading-payment').style.display = 'none';
