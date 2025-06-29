@@ -198,6 +198,138 @@ function getTodayStats() {
     ];
 }
 
+function validateLicense($code) {
+    $validLicenses = [
+        'TKB2025-INDO-001',
+        'TKB2025-INDO-002', 
+        'TKB2025-INDO-003',
+        'VIP-PREMIUM-2025',
+        'ADMIN-FULL-ACCESS'
+    ];
+    return in_array(strtoupper($code), $validLicenses);
+}
+
+session_start();
+
+if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['license_code'])) {
+        $licenseCode = trim($_POST['license_code']);
+        if (validateLicense($licenseCode)) {
+            $_SESSION['license_valid'] = true;
+            $_SESSION['license_code'] = strtoupper($licenseCode);
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        } else {
+            $licenseError = 'Kode license tidak valid!';
+        }
+    }
+    
+    if (!isset($_SESSION['license_valid'])) {
+        ?>
+        <!DOCTYPE html>
+        <html lang="id">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>License Verification - TikTok View Booster</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    min-height: 100vh; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center;
+                }
+                .license-container { 
+                    background: white; 
+                    border-radius: 15px; 
+                    padding: 40px; 
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+                    max-width: 500px; 
+                    width: 90%; 
+                    text-align: center;
+                }
+                .logo { font-size: 3em; margin-bottom: 20px; }
+                .title { font-size: 1.8em; color: #333; margin-bottom: 10px; }
+                .subtitle { color: #666; margin-bottom: 30px; }
+                .form-group { margin-bottom: 20px; text-align: left; }
+                label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+                input[type="text"] { 
+                    width: 100%; 
+                    padding: 12px; 
+                    border: 2px solid #ddd; 
+                    border-radius: 8px; 
+                    font-size: 16px; 
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                input[type="text"]:focus { outline: none; border-color: #667eea; }
+                .btn { 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; 
+                    padding: 12px 30px; 
+                    border: none; 
+                    border-radius: 8px; 
+                    cursor: pointer; 
+                    font-size: 16px; 
+                    font-weight: bold; 
+                    width: 100%; 
+                }
+                .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+                .error { 
+                    background: #f8d7da; 
+                    border: 1px solid #f5c6cb; 
+                    color: #721c24; 
+                    padding: 12px; 
+                    border-radius: 8px; 
+                    margin-bottom: 20px;
+                }
+                .license-info {
+                    background: #e7f3ff; 
+                    border: 1px solid #b8daff; 
+                    color: #004085; 
+                    padding: 15px; 
+                    border-radius: 8px; 
+                    margin-top: 20px; 
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="license-container">
+                <div class="logo">🔐</div>
+                <h1 class="title">Verifikasi License</h1>
+                <p class="subtitle">Masukkan kode license untuk mengakses aplikasi</p>
+                
+                <?php if (isset($licenseError)): ?>
+                    <div class="error"><?= $licenseError ?></div>
+                <?php endif; ?>
+                
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="license_code">Kode License:</label>
+                        <input type="text" id="license_code" name="license_code" placeholder="TKB2025-INDO-001" required>
+                    </div>
+                    <button type="submit" class="btn">Verifikasi License</button>
+                </form>
+                
+                <div class="license-info">
+                    <strong>Informasi License:</strong><br>
+                    • Aplikasi ini dilindungi sistem license<br>
+                    • Hanya pengguna berlisensi yang dapat mengakses<br>
+                    • Hubungi admin untuk mendapatkan kode license<br>
+                    • Format: TKB2025-INDO-XXX
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}
+
 $userIP = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 $userIP = explode(',', $userIP)[0];
 
@@ -416,19 +548,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 <?= $appName ?></h1>
-            <p>Versi Aman dengan Enkripsi AES-256 - Khusus Indonesia</p>
+            <h1>🚀 <?= $appName ?> - Licensed</h1>
+            <p>Versi Aman dengan Enkripsi AES-256 - Licensed: <?= $_SESSION['license_code'] ?></p>
         </div>
 
         <div class="card">
             <h2>Boost TikTok Views</h2>
             
             <div class="encryption-status">
-                <strong>🔐 Status Enkripsi:</strong><br>
+                <strong>🔐 Status Enkripsi & License:</strong><br>
                 • URL dan data sensitif dienkripsi dengan AES-256-CBC<br>
                 • API key dan URL endpoint tersembunyi dalam kode terenkripsi<br>
                 • Database credentials dilindungi enkripsi<br>
-                • Semua dalam satu file untuk kemudahan deployment
+                • Aplikasi berlisensi dengan kode: <?= $_SESSION['license_code'] ?>
             </div>
             
             <div class="security-info">
