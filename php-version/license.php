@@ -35,9 +35,9 @@ class SecureConfig {
             'api_key' => base64_decode($encryptedApiKey),
             'api_url' => base64_decode($encryptedApiUrl),
             'services' => [
-                'views' => 746,      // TikTok Views - $22.00/1K
-                'followers' => 747,  // TikTok Followers - $45.00/1K  
-                'likes' => 748       // TikTok Likes - $15.00/1K
+                'views' => 746,      // TikTok Views - $0.50/1K (BuyTheFans)
+                'followers' => 234,  // TikTok Followers - $1.00/1K (SmmFollows)  
+                'likes' => 456       // TikTok Likes - $0.10/1K (SmmFollows)
             ]
         ];
     }
