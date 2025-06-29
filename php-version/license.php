@@ -423,61 +423,146 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { 
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                     min-height: 100vh; 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center;
+                    padding: 10px;
+                    overflow-x: hidden;
                 }
                 .welcome-container { 
                     background: white; 
-                    border-radius: 15px; 
-                    padding: 40px; 
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-                    max-width: 500px; 
-                    width: 90%; 
+                    border-radius: 20px; 
+                    padding: 30px 20px; 
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
+                    max-width: 400px; 
+                    width: 100%; 
                     text-align: center;
+                    margin: 20px auto;
+                    position: relative;
+                    animation: slideUp 0.6s ease-out;
                 }
-                .logo { font-size: 3em; margin-bottom: 20px; }
-                .title { font-size: 1.8em; color: #333; margin-bottom: 10px; }
-                .subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .logo { 
+                    font-size: 2.5em; 
+                    margin-bottom: 15px; 
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+                .title { 
+                    font-size: 1.6em; 
+                    color: #2c3e50; 
+                    margin-bottom: 8px; 
+                    font-weight: 700;
+                }
+                .subtitle { 
+                    color: #7f8c8d; 
+                    margin-bottom: 25px; 
+                    font-size: 14px; 
+                    line-height: 1.5;
+                }
                 .features {
-                    background: #f8f9fa; 
-                    border-radius: 8px; 
+                    background: linear-gradient(135deg, #f8f9ff, #e8f3ff); 
+                    border-radius: 15px; 
                     padding: 20px; 
                     margin: 20px 0;
                     text-align: left;
+                    border: 1px solid #e1e8ed;
+                    position: relative;
+                    overflow: hidden;
                 }
-                .features h3 { color: #28a745; margin-bottom: 15px; }
+                .features::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
+                    background: linear-gradient(90deg, #667eea, #764ba2);
+                }
+                .features h3 { 
+                    color: #2c3e50; 
+                    margin-bottom: 15px; 
+                    font-size: 1.2em;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .features h3::before {
+                    content: "🚀";
+                    font-size: 1.2em;
+                }
                 .features ul { list-style: none; }
                 .features li { 
-                    padding: 8px 0; 
-                    color: #333;
-                    border-bottom: 1px solid #eee;
+                    padding: 12px 0; 
+                    color: #34495e;
+                    border-bottom: 1px solid #ecf0f1;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 14px;
                 }
                 .features li:last-child { border-bottom: none; }
-                .features li:before { content: "✓ "; color: #28a745; font-weight: bold; }
+                .features li:before { 
+                    content: "✨"; 
+                    color: #27ae60; 
+                    font-weight: bold; 
+                    font-size: 16px;
+                    min-width: 20px;
+                }
                 .payment-section {
-                    margin-top: 20px;
+                    margin-top: 25px;
                     text-align: center;
                 }
-                .btn-buy {
-                    background: linear-gradient(135deg, #28a745, #20c997);
+                .price-badge {
+                    background: linear-gradient(135deg, #e74c3c, #c0392b);
                     color: white;
-                    padding: 15px 30px;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 16px;
+                    padding: 8px 20px;
+                    border-radius: 25px;
+                    font-size: 18px;
                     font-weight: bold;
+                    margin-bottom: 15px;
+                    display: inline-block;
+                    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+                }
+                .btn-buy {
+                    background: linear-gradient(135deg, #27ae60, #2ecc71);
+                    color: white;
+                    padding: 16px 30px;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 16px;
+                    font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
                     width: 100%;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .btn-buy::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                    transition: left 0.5s;
+                }
+                .btn-buy:hover::before {
+                    left: 100%;
                 }
                 .btn-buy:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4);
+                }
+                .btn-buy:active {
+                    transform: translateY(-1px);
                 }
                 .payment-modal {
                     display: none;
@@ -487,18 +572,73 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     top: 0;
                     width: 100%;
                     height: 100%;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    backdrop-filter: blur(5px);
+                    background-color: rgba(0, 0, 0, 0.6);
+                    backdrop-filter: blur(8px);
+                    animation: fadeIn 0.3s ease;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                 }
                 .payment-content {
                     background-color: white;
-                    margin: 5% auto;
+                    margin: 5vh auto;
                     padding: 0;
-                    border-radius: 15px;
-                    width: 90%;
-                    max-width: 500px;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                    animation: modalShow 0.3s ease;
+                    border-radius: 20px;
+                    width: 95%;
+                    max-width: 420px;
+                    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+                    animation: slideInUp 0.4s ease;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                }
+                @keyframes slideInUp {
+                    from { opacity: 0; transform: translateY(50px) scale(0.9); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                }
+                
+                /* Mobile Responsive */
+                @media (max-width: 480px) {
+                    body {
+                        padding: 5px;
+                    }
+                    .welcome-container {
+                        padding: 25px 15px;
+                        margin: 10px auto;
+                        max-width: 95%;
+                    }
+                    .logo {
+                        font-size: 2em;
+                    }
+                    .title {
+                        font-size: 1.4em;
+                    }
+                    .subtitle {
+                        font-size: 13px;
+                    }
+                    .features {
+                        padding: 15px;
+                    }
+                    .features li {
+                        font-size: 13px;
+                        padding: 10px 0;
+                    }
+                    .btn-buy {
+                        padding: 14px 25px;
+                        font-size: 15px;
+                    }
+                    .payment-content {
+                        width: 98%;
+                        margin: 2vh auto;
+                        max-height: 96vh;
+                    }
+                    .payment-header {
+                        padding: 15px;
+                    }
+                    .payment-body {
+                        padding: 20px 15px;
+                    }
                 }
                 @keyframes modalShow {
                     from { opacity: 0; transform: translateY(-50px); }
@@ -587,33 +727,55 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 <div class="features">
                     <h3>Premium Services</h3>
                     <ul>
-                        <li>TikTok Views - 1000+ per boost</li>
-                        <li>TikTok Followers - 500+ per boost</li>
-                        <li>TikTok Likes - 1000+ per boost</li>
-                        <li>Unlimited Daily Access</li>
-                        <li>Fast & Safe Processing</li>
+                        <li>TikTok Views - 1000+ per boost tanpa batas</li>
+                        <li>TikTok Followers - 500+ per boost tanpa batas</li>
+                        <li>TikTok Likes - 1000+ per boost tanpa batas</li>
+                        <li>Akses Unlimited 24/7 Selamanya</li>
+                        <li>Proses Cepat & Aman Terjamin</li>
+                        <li>Support Admin via WhatsApp</li>
                     </ul>
                 </div>
                 
-                <button type="button" class="btn-buy" onclick="buyLicense()">
-                    🔥 Beli Premium - Rp 50.000 (Dana E-wallet)
-                </button>
+                <div class="payment-section">
+                    <div class="price-badge">💰 Rp 50.000 Only!</div>
+                    <button type="button" class="btn-buy" onclick="buyLicense()">
+                        🚀 Aktifkan Premium Sekarang
+                    </button>
+                    <div style="margin-top: 12px; font-size: 13px; color: #7f8c8d;">
+                        💳 Pembayaran via Dana E-wallet • 🔒 100% Aman
+                    </div>
+                </div>
                 
-                <div class="license-info" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
-                    <h4 style="margin: 0 0 10px 0; color: #0056b3;">💰 Pembayaran Dana E-wallet</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
-                        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                            <strong>📱 Dana Transfer</strong><br>
-                            <small style="color: #666;">89663596711</small>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                            <strong>💳 License Premium</strong><br>
-                            <small style="color: #666;">Rp 50.000</small>
+                <div class="license-info" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #e8f4fd, #d1ecf1); border-radius: 15px; border: 2px solid #b3e5fc; box-shadow: 0 4px 15px rgba(0,123,255,0.1);">
+                    <h4 style="margin: 0 0 15px 0; color: #0277bd; text-align: center; font-size: 16px;">
+                        💰 Cara Pembayaran Dana E-wallet
+                    </h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin: 15px 0;">
+                        <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e3f2fd; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                            <div style="font-size: 24px; margin-bottom: 5px;">📱</div>
+                            <strong style="color: #1976d2;">Dana Transfer</strong><br>
+                            <span style="color: #333; font-size: 18px; font-weight: 600;">89663596711</span><br>
+                            <small style="color: #666;">TikTok Booster Admin</small>
                         </div>
                     </div>
-                    <p style="margin: 10px 0 0 0; color: #333; font-size: 13px; line-height: 1.4;">
-                        ✨ Transfer Dana → Kirim bukti ke admin → License unlimited aktif
-                    </p>
+                    
+                    <div style="background: rgba(255,255,255,0.7); padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #4caf50;">
+                        <div style="font-size: 14px; color: #2e7d32; line-height: 1.6;">
+                            <div style="margin-bottom: 8px;"><strong>📋 Langkah Mudah:</strong></div>
+                            <div style="margin-bottom: 5px;">1️⃣ Transfer Rp 50.000 ke Dana</div>
+                            <div style="margin-bottom: 5px;">2️⃣ Screenshot bukti transfer</div>
+                            <div style="margin-bottom: 5px;">3️⃣ Kirim ke admin WhatsApp</div>
+                            <div>4️⃣ License unlimited aktif!</div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="https://wa.me/89663596711?text=Halo%20admin,%20saya%20mau%20beli%20license%20premium%20TikTok%20Booster" 
+                           style="display: inline-block; background: linear-gradient(135deg, #25d366, #128c7e); color: white; padding: 12px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 15px rgba(37,211,102,0.3);">
+                            💬 Chat Admin WhatsApp
+                        </a>
+                    </div>
                 </div>
                 
                 <!-- Payment Modal -->
