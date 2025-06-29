@@ -167,6 +167,12 @@ Changelog:
   - Significantly improved pricing: 22.00 per 1000 views vs previous rates
   - Successfully tested API integration with real order creation
   - Both Express.js and PHP versions updated with new API configuration
+- **License System Simplification (June 29, 2025):**
+  - Removed complex 5-tier license system (Basic, Standard, Premium, VIP, Admin)
+  - Simplified to single license code: TKB2025-LICENSED (5 boost/day)
+  - Fixed daily limit to 5 boosts for all users
+  - Removed getLicenseLimit() function and session complexity
+  - Cleaner interface without confusing tier information
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality

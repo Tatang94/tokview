@@ -85,7 +85,7 @@ class SecureConfig {
 $dbConfig = SecureConfig::getDatabaseConfig();
 $apiConfig = SecureConfig::getApiConfig();
 
-$dailyLimit = getLicenseLimit();
+$dailyLimit = 5;
 $appName = 'TikTok View Booster';
 
 try {
@@ -200,11 +200,7 @@ function getTodayStats() {
 
 function validateLicense($code) {
     $licenses = [
-        'TKB2025-INDO-001' => ['type' => 'basic', 'daily_limit' => 3, 'features' => 'Basic Plan'],
-        'TKB2025-INDO-002' => ['type' => 'standard', 'daily_limit' => 5, 'features' => 'Standard Plan'],
-        'TKB2025-INDO-003' => ['type' => 'premium', 'daily_limit' => 10, 'features' => 'Premium Plan'],
-        'VIP-PREMIUM-2025' => ['type' => 'vip', 'daily_limit' => 25, 'features' => 'VIP Premium - Unlimited'],
-        'ADMIN-FULL-ACCESS' => ['type' => 'admin', 'daily_limit' => 999, 'features' => 'Admin Full Access']
+        'TKB2025-LICENSED' => ['type' => 'full', 'daily_limit' => 5, 'features' => 'Full Access']
     ];
     
     $code = strtoupper($code);
@@ -214,12 +210,7 @@ function validateLicense($code) {
     return false;
 }
 
-function getLicenseLimit() {
-    if (isset($_SESSION['license_info'])) {
-        return $_SESSION['license_info']['daily_limit'];
-    }
-    return 5;
-}
+
 
 session_start();
 
@@ -330,12 +321,9 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 </form>
                 
                 <div class="license-info">
-                    <strong>Informasi License:</strong><br>
-                    • <strong>TKB2025-INDO-001</strong> - Basic Plan (3 boost/hari)<br>
-                    • <strong>TKB2025-INDO-002</strong> - Standard Plan (5 boost/hari)<br>
-                    • <strong>TKB2025-INDO-003</strong> - Premium Plan (10 boost/hari)<br>
-                    • <strong>VIP-PREMIUM-2025</strong> - VIP Premium (25 boost/hari)<br>
-                    • <strong>ADMIN-FULL-ACCESS</strong> - Admin Full Access (999 boost/hari)
+                    <strong>Kode License:</strong><br>
+                    • <strong>TKB2025-LICENSED</strong> - Full Access (5 boost/hari)<br>
+                    • Hubungi admin untuk mendapatkan kode license
                 </div>
             </div>
         </body>
@@ -566,7 +554,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     <div class="container">
         <div class="header">
             <h1>🚀 <?= $appName ?> - Licensed</h1>
-            <p>Versi Aman dengan Enkripsi AES-256 - <?= $_SESSION['license_info']['features'] ?></p>
+            <p>Versi Aman dengan Enkripsi AES-256 - Full Access</p>
         </div>
 
         <div class="card">
@@ -577,7 +565,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 • URL dan data sensitif dienkripsi dengan AES-256-CBC<br>
                 • API key dan URL endpoint tersembunyi dalam kode terenkripsi<br>
                 • Database credentials dilindungi enkripsi<br>
-                • Aplikasi berlisensi: <?= $_SESSION['license_info']['features'] ?> (<?= $_SESSION['license_info']['daily_limit'] ?> boost/hari)
+                • Aplikasi berlisensi: Full Access (5 boost/hari)
             </div>
             
             <div class="security-info">
@@ -593,7 +581,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     <label for="videoUrl">URL Video TikTok:</label>
                     <input type="url" id="videoUrl" placeholder="https://vt.tiktok.com/ZSxxxxxxx" required>
                 </div>
-                <button type="submit" class="btn">Boost Sekarang (+1000 Views) - Limit: <?= $_SESSION['license_info']['daily_limit'] ?>/hari</button>
+                <button type="submit" class="btn">Boost Sekarang (+1000 Views) - Limit: 5/hari</button>
             </form>
             
             <div class="loading" id="loading">
