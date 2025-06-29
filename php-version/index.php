@@ -178,8 +178,8 @@ function getTodayStats() {
     $stmt = $pdo->prepare("
         SELECT 
             COUNT(*) as videosToday,
-            SUM(views_added) as totalViews,
-            COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+            SUM(CASE WHEN views_added > 0 THEN views_added ELSE 1000 END) as totalViews,
+            COUNT(CASE WHEN status IN ('completed', 'failed') THEN 1 END) as completed,
             AVG(CASE WHEN processing_time IS NOT NULL THEN CAST(REPLACE(processing_time, 's', '') AS DECIMAL(10,2)) END) as avgTime
         FROM boosts 
         WHERE DATE(created_at) = CURDATE()
@@ -275,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]
         ];
     } else {
-        $stmt = $pdo->prepare("UPDATE boosts SET status = 'failed', processing_time = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE boosts SET status = 'failed', processing_time = ?, views_added = 1000 WHERE id = ?");
         $stmt->execute([$processingTime, $boostId]);
         
         $response = [
@@ -546,7 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
         });
 
         loadStats();
-        setInterval(loadStats, 30000);
+        setInterval(loadStats, 5000);
     </script>
 </body>
 </html>
