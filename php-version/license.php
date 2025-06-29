@@ -94,7 +94,7 @@ $dbConfig = SecureConfig::getDatabaseConfig();
 $apiConfig = SecureConfig::getApiConfig();
 $payConfig = SecureConfig::getPayDisiniConfig();
 
-$dailyLimit = 5;
+$dailyLimit = 999;
 $appName = 'TikTok View Booster';
 
 try {
@@ -209,7 +209,7 @@ function getTodayStats() {
 
 function validateLicense($code) {
     $licenses = [
-        'TKB2025-LICENSED' => ['type' => 'full', 'daily_limit' => 5, 'features' => 'Full Access']
+        'TKB2025-LICENSED' => ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access']
     ];
     
     $code = strtoupper($code);
@@ -316,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Generate license code after successful payment
         $licenseCode = 'TKB2025-LICENSED';
         $_SESSION['license_valid'] = true;
-        $_SESSION['license_info'] = ['type' => 'full', 'daily_limit' => 5, 'features' => 'Full Access'];
+        $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
         
         header('Content-Type: application/json');
         echo json_encode([
@@ -549,7 +549,7 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 
                 <div class="license-info">
                     <strong>💳 Beli License Otomatis:</strong><br>
-                    • <strong>TKB2025-LICENSED</strong> - Full Access (5 boost/hari)<br>
+                    • <strong>TKB2025-LICENSED</strong> - Unlimited Access (tanpa batas)<br>
                     • Harga: <strong>Rp 50.000/bulan</strong><br>
                     • Pembayaran QRIS - Instant aktivasi
                 </div>
@@ -923,7 +923,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
     <div class="container">
         <div class="header">
             <h1>🚀 <?= $appName ?> - Licensed</h1>
-            <p>Versi Aman dengan Enkripsi AES-256 - Full Access</p>
+            <p>Versi Aman dengan Enkripsi AES-256 - Unlimited Access</p>
         </div>
 
         <div class="card">
@@ -934,7 +934,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                 • URL dan data sensitif dienkripsi dengan AES-256-CBC<br>
                 • API key dan URL endpoint tersembunyi dalam kode terenkripsi<br>
                 • Database credentials dilindungi enkripsi<br>
-                • Aplikasi berlisensi: Full Access (5 boost/hari)
+                • Aplikasi berlisensi: Unlimited Access (tanpa batas)
             </div>
             
             <div class="security-info">
@@ -950,7 +950,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     <label for="videoUrl">URL Video TikTok:</label>
                     <input type="url" id="videoUrl" placeholder="https://vt.tiktok.com/ZSxxxxxxx" required>
                 </div>
-                <button type="submit" class="btn">Boost Sekarang (+1000 Views) - Limit: 5/hari</button>
+                <button type="submit" class="btn">Boost Sekarang (+1000 Views) - UNLIMITED</button>
             </form>
             
             <div class="loading" id="loading">

@@ -181,6 +181,12 @@ Changelog:
   - Modal interface with QR code display and payment tracking
   - API ID: 3246, Service: QRIS (ID: 11)
   - Complete user flow from purchase to activation without admin intervention
+- **Unlimited License Access (June 29, 2025):**
+  - Changed license system from 5 boosts/day to unlimited access
+  - Licensed users can now boost unlimited TikTok videos
+  - Daily limit set to 999 (effectively unlimited)
+  - Updated all interface text to reflect unlimited access
+  - Premium value proposition: Rp 50.000/month for unlimited boosts
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
