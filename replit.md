@@ -173,6 +173,14 @@ Changelog:
   - Fixed daily limit to 5 boosts for all users
   - Removed getLicenseLimit() function and session complexity
   - Cleaner interface without confusing tier information
+- **PayDisini Payment Gateway Integration (June 29, 2025):**
+  - Added automatic license purchase system with PayDisini API
+  - QRIS payment integration for Rp 50.000/month license
+  - Real-time payment status checking every 3 seconds
+  - Auto-activation of license after successful payment
+  - Modal interface with QR code display and payment tracking
+  - API ID: 3246, Service: QRIS (ID: 11)
+  - Complete user flow from purchase to activation without admin intervention
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality

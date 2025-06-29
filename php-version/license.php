@@ -38,6 +38,14 @@ class SecureConfig {
         ];
     }
     
+    public static function getPayDisiniConfig() {
+        return [
+            'api_id' => '3246',
+            'api_key' => 'ff79be802563e5dc1311c227a72d17c1',
+            'api_url' => 'https://api.paydisini.co.id/v1/'
+        ];
+    }
+    
     public static function encryptUrl($url) {
         $urlSalt = 'TikTokURL_' . date('Y-m-d');
         return self::encrypt($url . '|' . $urlSalt);
@@ -84,6 +92,7 @@ class SecureConfig {
 
 $dbConfig = SecureConfig::getDatabaseConfig();
 $apiConfig = SecureConfig::getApiConfig();
+$payConfig = SecureConfig::getPayDisiniConfig();
 
 $dailyLimit = 5;
 $appName = 'TikTok View Booster';
@@ -210,9 +219,118 @@ function validateLicense($code) {
     return false;
 }
 
+function createPayDisiniPayment($amount, $description) {
+    global $payConfig;
+    
+    $uniqueCode = 'TKB' . time() . rand(100, 999);
+    $expired = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    
+    $postData = [
+        'key' => $payConfig['api_key'],
+        'request' => 'new',
+        'unique_code' => $uniqueCode,
+        'service' => '11', // QRIS
+        'amount' => $amount,
+        'note' => $description,
+        'valid_time' => '3600', // 1 hour
+        'type_fee' => '1'
+    ];
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $payConfig['api_url'],
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query($postData),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_USERAGENT => 'TikTokBooster/1.0'
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return ['response' => $response, 'httpCode' => $httpCode, 'data' => json_decode($response, true)];
+}
+
+function checkPayDisiniStatus($uniqueCode) {
+    global $payConfig;
+    
+    $postData = [
+        'key' => $payConfig['api_key'],
+        'request' => 'status',
+        'unique_code' => $uniqueCode
+    ];
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $payConfig['api_url'],
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query($postData),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT => 30
+    ]);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
 
 
 session_start();
+
+// Handle payment creation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_payment') {
+    $payment = createPayDisiniPayment(50000, 'TikTok View Booster - License 1 Bulan');
+    
+    if ($payment['data']['success']) {
+        $_SESSION['payment_data'] = $payment['data']['data'];
+        $_SESSION['payment_unique_code'] = $payment['data']['data']['unique_code'];
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'payment_url' => $payment['data']['data']['checkout_url'],
+            'qr_code' => $payment['data']['data']['qrcode_url'],
+            'amount' => $payment['data']['data']['amount'],
+            'unique_code' => $payment['data']['data']['unique_code'],
+            'expired_time' => $payment['data']['data']['expired_time']
+        ]);
+        exit;
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Gagal membuat pembayaran']);
+        exit;
+    }
+}
+
+// Handle payment status check
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_payment') {
+    $uniqueCode = $_POST['unique_code'];
+    $status = checkPayDisiniStatus($uniqueCode);
+    
+    if ($status['success'] && $status['data']['status'] === 'Success') {
+        // Generate license code after successful payment
+        $licenseCode = 'TKB2025-LICENSED';
+        $_SESSION['license_valid'] = true;
+        $_SESSION['license_info'] = ['type' => 'full', 'daily_limit' => 5, 'features' => 'Full Access'];
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'license_code' => $licenseCode,
+            'message' => 'Pembayaran berhasil! Kode license Anda: ' . $licenseCode
+        ]);
+        exit;
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'status' => $status['data']['status'] ?? 'Pending']);
+        exit;
+    }
+}
 
 if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['license_code'])) {
@@ -300,6 +418,115 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                     margin-top: 20px; 
                     font-size: 14px;
                 }
+                .payment-section {
+                    margin-top: 20px;
+                    text-align: center;
+                }
+                .btn-buy {
+                    background: linear-gradient(135deg, #28a745, #20c997);
+                    color: white;
+                    padding: 15px 30px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                    width: 100%;
+                }
+                .btn-buy:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+                }
+                .payment-modal {
+                    display: none;
+                    position: fixed;
+                    z-index: 1000;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    backdrop-filter: blur(5px);
+                }
+                .payment-content {
+                    background-color: white;
+                    margin: 5% auto;
+                    padding: 0;
+                    border-radius: 15px;
+                    width: 90%;
+                    max-width: 500px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    animation: modalShow 0.3s ease;
+                }
+                @keyframes modalShow {
+                    from { opacity: 0; transform: translateY(-50px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .payment-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px;
+                    background: linear-gradient(135deg, #007bff, #0056b3);
+                    color: white;
+                    border-radius: 15px 15px 0 0;
+                }
+                .payment-header h3 {
+                    margin: 0;
+                    font-size: 18px;
+                }
+                .close {
+                    font-size: 28px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    line-height: 1;
+                }
+                .close:hover {
+                    opacity: 0.7;
+                }
+                .payment-body {
+                    padding: 30px;
+                    text-align: center;
+                }
+                .qr-container {
+                    margin: 20px 0;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 10px;
+                    border: 2px dashed #007bff;
+                }
+                .qr-container img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 8px;
+                }
+                .payment-info {
+                    background: #e3f2fd;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 15px 0;
+                }
+                .payment-info p {
+                    margin: 5px 0;
+                    font-size: 14px;
+                }
+                .payment-status {
+                    margin-top: 20px;
+                    padding: 15px;
+                    background: #fff3cd;
+                    border-radius: 8px;
+                    border-left: 4px solid #ffc107;
+                }
+                .loading-payment {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: #666;
+                    font-size: 14px;
+                    margin-top: 10px;
+                }
             </style>
         </head>
         <body>
@@ -321,11 +548,153 @@ if (!isset($_SESSION['license_valid']) || $_SESSION['license_valid'] !== true) {
                 </form>
                 
                 <div class="license-info">
-                    <strong>Kode License:</strong><br>
+                    <strong>💳 Beli License Otomatis:</strong><br>
                     • <strong>TKB2025-LICENSED</strong> - Full Access (5 boost/hari)<br>
-                    • Hubungi admin untuk mendapatkan kode license
+                    • Harga: <strong>Rp 50.000/bulan</strong><br>
+                    • Pembayaran QRIS - Instant aktivasi
+                </div>
+                
+                <div class="payment-section">
+                    <button type="button" class="btn-buy" onclick="buyLicense()">
+                        💳 Beli License Rp 50.000
+                    </button>
+                </div>
+                
+                <div id="payment-modal" class="payment-modal" style="display: none;">
+                    <div class="payment-content">
+                        <div class="payment-header">
+                            <h3>Pembayaran License</h3>
+                            <span class="close" onclick="closePayment()">&times;</span>
+                        </div>
+                        <div class="payment-body">
+                            <div id="qr-section" style="display: none;">
+                                <p><strong>Scan QR Code untuk membayar:</strong></p>
+                                <div class="qr-container">
+                                    <img id="qr-image" src="" alt="QR Code" style="max-width: 250px;">
+                                </div>
+                                <div class="payment-info">
+                                    <p>Jumlah: <strong id="payment-amount">Rp 50.000</strong></p>
+                                    <p>Kode: <strong id="payment-code"></strong></p>
+                                    <p>Berlaku sampai: <strong id="payment-expired"></strong></p>
+                                </div>
+                                <div class="payment-status">
+                                    <p id="status-text">Menunggu pembayaran...</p>
+                                    <div class="loading-payment">⏳ Mengecek status pembayaran...</div>
+                                </div>
+                            </div>
+                            <div id="loading-payment" style="display: block;">
+                                <div class="spinner"></div>
+                                <p>Membuat pembayaran...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <script>
+                let paymentCheckInterval;
+                let currentUniqueCode = '';
+                
+                function buyLicense() {
+                    document.getElementById('payment-modal').style.display = 'block';
+                    document.getElementById('loading-payment').style.display = 'block';
+                    document.getElementById('qr-section').style.display = 'none';
+                    
+                    fetch('', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=create_payment'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            currentUniqueCode = data.unique_code;
+                            document.getElementById('loading-payment').style.display = 'none';
+                            document.getElementById('qr-section').style.display = 'block';
+                            
+                            document.getElementById('qr-image').src = data.qr_code;
+                            document.getElementById('payment-amount').textContent = 'Rp ' + Number(data.amount).toLocaleString('id-ID');
+                            document.getElementById('payment-code').textContent = data.unique_code;
+                            document.getElementById('payment-expired').textContent = data.expired_time;
+                            
+                            // Start checking payment status
+                            startPaymentCheck();
+                        } else {
+                            alert('Gagal membuat pembayaran: ' + data.message);
+                            closePayment();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat membuat pembayaran');
+                        closePayment();
+                    });
+                }
+                
+                function startPaymentCheck() {
+                    paymentCheckInterval = setInterval(checkPaymentStatus, 3000); // Check every 3 seconds
+                }
+                
+                function checkPaymentStatus() {
+                    if (!currentUniqueCode) return;
+                    
+                    fetch('', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=check_payment&unique_code=' + currentUniqueCode
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            clearInterval(paymentCheckInterval);
+                            document.getElementById('status-text').innerHTML = 
+                                '<span style="color: #28a745;">✅ Pembayaran berhasil!</span>';
+                            document.querySelector('.loading-payment').style.display = 'none';
+                            
+                            setTimeout(() => {
+                                alert('Pembayaran berhasil! Kode license Anda: ' + data.license_code + '\\n\\nHalaman akan di-refresh untuk mengaktifkan license.');
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            // Update status but continue checking
+                            const statusMap = {
+                                'Pending': 'Menunggu pembayaran...',
+                                'Expired': 'Pembayaran expired',
+                                'Canceled': 'Pembayaran dibatalkan'
+                            };
+                            document.getElementById('status-text').textContent = statusMap[data.status] || 'Menunggu pembayaran...';
+                            
+                            if (data.status === 'Expired' || data.status === 'Canceled') {
+                                clearInterval(paymentCheckInterval);
+                                document.querySelector('.loading-payment').style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking payment:', error);
+                    });
+                }
+                
+                function closePayment() {
+                    document.getElementById('payment-modal').style.display = 'none';
+                    if (paymentCheckInterval) {
+                        clearInterval(paymentCheckInterval);
+                    }
+                    currentUniqueCode = '';
+                }
+                
+                // Close modal when clicking outside
+                window.onclick = function(event) {
+                    const modal = document.getElementById('payment-modal');
+                    if (event.target === modal) {
+                        closePayment();
+                    }
+                }
+            </script>
         </body>
         </html>
         <?php
