@@ -36,12 +36,12 @@ class SecureConfig {
             'api_url' => base64_decode($encryptedApiUrl),
             'services' => [
                 'views' => 746,      // TikTok Views - Cost: Rp 22/1K | Sell: Rp 66/1K (3x markup)
-                'followers' => 748,  // TikTok Followers - Cost: Rp 17.034/1K | Sell: Rp 51.102/1K (3x markup)  
+                'followers' => 748,  // TikTok Followers - Cost: Rp 17.034/1K | Sell: Rp 22.034/1K (+Rp 5K profit)  
                 'likes' => 6         // TikTok Likes - Cost: Rp 490/1K | Sell: Rp 1.470/1K (3x markup)
             ],
             'pricing' => [
                 'views' => ['cost' => 22, 'sell' => 66, 'profit_margin' => 200],
-                'followers' => ['cost' => 17034, 'sell' => 51102, 'profit_margin' => 200],
+                'followers' => ['cost' => 17034, 'sell' => 22034, 'profit_margin' => 29.4],
                 'likes' => ['cost' => 490, 'sell' => 1470, 'profit_margin' => 200]
             ]
         ];
@@ -979,15 +979,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
 
         <div class="card">
             <h2>TikTok Boost Services</h2>
-            <div class="pricing-info" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 10px 0; color: white;">📊 Harga Layanan Premium</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 14px;">
-                    <div>📈 Views: <strong>Rp 66 per 1.000</strong></div>
-                    <div>👥 Followers: <strong>Rp 51.102 per 1.000</strong></div>
-                    <div>❤️ Likes: <strong>Rp 1.470 per 1.000</strong></div>
-                </div>
-                <p style="margin: 10px 0 0 0; font-size: 12px; opacity: 0.9;">✨ Harga sudah termasuk profit margin - Powered by Lollipop SMM</p>
-            </div>
+
             
 
             
@@ -998,9 +990,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
                     <label for="serviceType">Pilih Layanan:</label>
                     <select id="serviceType" required onchange="updateUrlPlaceholder()">
                         <option value="">-- Pilih Layanan --</option>
-                        <option value="views">TikTok Views (+1000) - Rp 66/1K</option>
-                        <option value="followers">TikTok Followers (+500) - Rp 51.102/1K</option>
-                        <option value="likes">TikTok Likes (+1000) - Rp 1.470/1K</option>
+                        <option value="views">TikTok Views (+1000)</option>
+                        <option value="followers">TikTok Followers (+500)</option>
+                        <option value="likes">TikTok Likes (+1000)</option>
                     </select>
                 </div>
                 
