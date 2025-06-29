@@ -309,14 +309,23 @@ session_start();
 if (isset($_GET['verify']) && !empty($_GET['verify'])) {
     $verifyCode = $_GET['verify'];
     
-    // Auto-activate license for this verification code
-    $_SESSION['license_valid'] = true;
-    $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
-    $_SESSION['verified_code'] = $verifyCode;
-    $_SESSION['verification_time'] = date('Y-m-d H:i:s');
-    
-    // Set success message
-    $_SESSION['activation_message'] = "✅ License berhasil diaktifkan melalui verifikasi admin! Kode: " . $verifyCode;
+    // Validate verification code format
+    if (preg_match('/^TKB\d+$/', $verifyCode)) {
+        // Auto-activate license for this verification code
+        $_SESSION['license_valid'] = true;
+        $_SESSION['license_info'] = ['type' => 'unlimited', 'daily_limit' => 999, 'features' => 'Unlimited Access'];
+        $_SESSION['verified_code'] = $verifyCode;
+        $_SESSION['verification_time'] = date('Y-m-d H:i:s');
+        
+        // Set success message
+        $_SESSION['activation_message'] = "✅ License berhasil diaktifkan melalui verifikasi admin! Kode: " . $verifyCode;
+        
+        // Redirect to clean URL to avoid repeated activation
+        header("Location: " . strtok($_SERVER["REQUEST_URI"], '?'));
+        exit;
+    } else {
+        $_SESSION['activation_message'] = "❌ Kode verifikasi tidak valid: " . htmlspecialchars($verifyCode);
+    }
 }
 
 // Handle Dana manual payment creation
