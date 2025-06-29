@@ -931,13 +931,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['stats'])) {
             
 
             
-            <div class="security-info">
-                <strong>🛡️ Perlindungan Keamanan:</strong><br>
-                • Deteksi otomatis VPN/Proxy dan pemblokiran<br>
-                • Validasi IP address untuk mencegah bot<br>
-                • Limit 5 boost per IP per hari<br>
-                • Enkripsi URL TikTok sebelum disimpan ke database
-            </div>
+
             
             <form id="boostForm">
                 <div class="form-group">
