@@ -99,15 +99,15 @@ try {
     die("Koneksi database gagal");
 }
 
-$createTable = "CREATE TABLE IF NOT EXISTS tiktok_boosts (
+$createTable = "CREATE TABLE IF NOT EXISTS boosts (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    video_url_encrypted TEXT NOT NULL,
+    url_encrypted TEXT NOT NULL,
     service_id INT DEFAULT 746,
     order_id VARCHAR(255),
     status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
     views_added INT DEFAULT 0,
     processing_time VARCHAR(50),
-    video_title VARCHAR(500),
+    title VARCHAR(500),
     ip_address VARCHAR(45) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -161,7 +161,7 @@ function validateTikTokUrl($url) {
 function checkDailyLimit($ip) {
     global $pdo, $dailyLimit;
     
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM tiktok_boosts WHERE ip_address = ? AND DATE(created_at) = CURDATE()");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM boosts WHERE ip_address = ? AND DATE(created_at) = CURDATE()");
     $stmt->execute([$ip]);
     $count = $stmt->fetchColumn();
     
@@ -181,7 +181,7 @@ function getTodayStats() {
             SUM(views_added) as totalViews,
             COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
             AVG(CASE WHEN processing_time IS NOT NULL THEN CAST(REPLACE(processing_time, 's', '') AS DECIMAL(10,2)) END) as avgTime
-        FROM tiktok_boosts 
+        FROM boosts 
         WHERE DATE(created_at) = CURDATE()
     ");
     
@@ -245,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $encryptedUrl = SecureConfig::encryptUrl($videoUrl);
     
-    $stmt = $pdo->prepare("INSERT INTO tiktok_boosts (video_url_encrypted, service_id, ip_address, status) VALUES (?, ?, ?, 'pending')");
+    $stmt = $pdo->prepare("INSERT INTO boosts (url_encrypted, service_id, ip_address, status) VALUES (?, ?, ?, 'pending')");
     $stmt->execute([$encryptedUrl, $apiConfig['service_id'], $userIP]);
     $boostId = $pdo->lastInsertId();
     
@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($apiResult['httpCode'] === 200 && isset($apiResult['data']['order'])) {
         $orderId = $apiResult['data']['order'];
-        $stmt = $pdo->prepare("UPDATE tiktok_boosts SET order_id = ?, status = 'completed', views_added = 1000, processing_time = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE boosts SET order_id = ?, status = 'completed', views_added = 1000, processing_time = ? WHERE id = ?");
         $stmt->execute([$orderId, $processingTime, $boostId]);
         
         $response = [
@@ -275,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]
         ];
     } else {
-        $stmt = $pdo->prepare("UPDATE tiktok_boosts SET status = 'failed', processing_time = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE boosts SET status = 'failed', processing_time = ? WHERE id = ?");
         $stmt->execute([$processingTime, $boostId]);
         
         $response = [
