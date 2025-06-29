@@ -35,9 +35,14 @@ class SecureConfig {
             'api_key' => base64_decode($encryptedApiKey),
             'api_url' => base64_decode($encryptedApiUrl),
             'services' => [
-                'views' => 746,      // TikTok Views - Rp 22/1K (Lollipop SMM)
-                'followers' => 748,  // TikTok Followers - Rp 17.034/1K (Lollipop SMM)  
-                'likes' => 6         // TikTok Likes - Rp 490/1K (Lollipop SMM)
+                'views' => 746,      // TikTok Views - Cost: Rp 22/1K | Sell: Rp 66/1K (3x markup)
+                'followers' => 748,  // TikTok Followers - Cost: Rp 17.034/1K | Sell: Rp 51.102/1K (3x markup)  
+                'likes' => 6         // TikTok Likes - Cost: Rp 490/1K | Sell: Rp 1.470/1K (3x markup)
+            ],
+            'pricing' => [
+                'views' => ['cost' => 22, 'sell' => 66, 'profit_margin' => 200],
+                'followers' => ['cost' => 17034, 'sell' => 51102, 'profit_margin' => 200],
+                'likes' => ['cost' => 490, 'sell' => 1470, 'profit_margin' => 200]
             ]
         ];
     }

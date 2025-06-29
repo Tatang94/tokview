@@ -203,6 +203,13 @@ Changelog:
   - Updated TikTok Likes from ID 748 to ID 6 (Rp 490/1K)
   - Updated TikTok Views pricing from Rp 1.000/1K to Rp 22/1K (ID 746)
   - All service IDs and pricing updated in both PHP and Express.js versions
+- **Pricing System with 3x Markup (June 29, 2025):**
+  - Implemented 3x markup pricing system for profit calculation
+  - Views: Cost Rp 22/1K → Sell Rp 66/1K (200% profit margin)
+  - Followers: Cost Rp 17.034/1K → Sell Rp 51.102/1K (200% profit margin)
+  - Likes: Cost Rp 490/1K → Sell Rp 1.470/1K (200% profit margin)
+  - Added pricing configuration object with cost/sell/profit_margin tracking
+  - Updated UI to display selling prices with gradient pricing info section
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
