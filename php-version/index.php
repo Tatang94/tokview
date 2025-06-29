@@ -34,7 +34,11 @@ class SecureConfig {
         return [
             'api_key' => base64_decode($encryptedApiKey),
             'api_url' => base64_decode($encryptedApiUrl),
-            'service_id' => 746
+            'services' => [
+                'views' => 746,      // TikTok Views - Rp 1.000/1K (Lollipop SMM)
+                'followers' => 748,  // TikTok Followers - Rp 17.034/1K (Lollipop SMM)  
+                'likes' => 6         // TikTok Likes - Rp 490/1K (Lollipop SMM)
+            ]
         ];
     }
     

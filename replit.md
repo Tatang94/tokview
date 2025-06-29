@@ -198,6 +198,11 @@ Changelog:
   - Service-specific processing times and messages
   - Updated statistics with service breakdown display
   - Database schema enhanced with service_type tracking
+- **Service ID Update (June 29, 2025):**
+  - Updated TikTok Followers from ID 747 to ID 748 (Rp 17.034/1K)
+  - Updated TikTok Likes from ID 748 to ID 6 (Rp 490/1K)
+  - TikTok Views remains ID 746 (Rp 1.000/1K)
+  - Updated both PHP and Express.js versions with correct service IDs
 - **PHP Version Created (June 28, 2025):**
   - Created complete PHP version for shared hosting deployment
   - Single-file application (index_hosting.php) with all functionality
