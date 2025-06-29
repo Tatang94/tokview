@@ -168,6 +168,13 @@ Changelog:
   - Significantly improved pricing: 22.00 per 1000 views vs previous rates
   - Successfully tested API integration with real order creation
   - Both Express.js and PHP versions updated with new API configuration
+- **Database Compatibility Fix (June 29, 2025):**
+  - Fixed fatal error: Column 'service_type' not found in existing databases
+  - Added backward compatibility for legacy database structures
+  - Implemented automatic column detection and conditional queries
+  - Enhanced error handling with try-catch blocks for all database operations
+  - Created migration tools (migrate_database.php, fix_database.php) for database maintenance
+  - Applications now work with both new and existing database schemas gracefully
 - **License System Simplification (June 29, 2025):**
   - Removed complex 5-tier license system (Basic, Standard, Premium, VIP, Admin)
   - Simplified to single license code: TKB2025-LICENSED (5 boost/day)
